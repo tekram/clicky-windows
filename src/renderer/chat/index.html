@@ -325,21 +325,35 @@
       padding: 8px 0;
     }
 
-    /* Markdown in assistant messages */
-    .msg.assistant p { margin: 0 0 8px; }
+    /* Markdown in assistant messages — compact spacing */
+    .msg.assistant p { margin: 0 0 4px; line-height: 1.5; }
     .msg.assistant p:last-child { margin-bottom: 0; }
-    .msg.assistant ul, .msg.assistant ol { margin: 4px 0 8px 18px; padding: 0; }
-    .msg.assistant li { margin: 2px 0; }
+    .msg.assistant p + p { margin-top: 2px; }
+    .msg.assistant br { display: block; content: ''; margin: 1px 0; }
+    .msg.assistant ul, .msg.assistant ol { margin: 2px 0 4px 16px; padding: 0; }
+    .msg.assistant li { margin: 1px 0; line-height: 1.4; }
+    .msg.assistant li p { margin: 0; display: inline; }
+    .msg.assistant ul ul, .msg.assistant ol ol, .msg.assistant ul ol, .msg.assistant ol ul {
+      margin: 1px 0 1px 14px;
+    }
     .msg.assistant strong { color: #fff; font-weight: 600; }
     .msg.assistant em { color: var(--text-secondary); }
-    .msg.assistant h1, .msg.assistant h2, .msg.assistant h3 {
+    .msg.assistant h1, .msg.assistant h2, .msg.assistant h3,
+    .msg.assistant h4, .msg.assistant h5, .msg.assistant h6 {
       font-size: 13px;
       font-weight: 600;
       color: #fff;
-      margin: 8px 0 4px;
+      margin: 6px 0 2px;
+      line-height: 1.3;
     }
-    .msg.assistant h1:first-child, .msg.assistant h2:first-child, .msg.assistant h3:first-child {
+    .msg.assistant h1:first-child, .msg.assistant h2:first-child,
+    .msg.assistant h3:first-child, .msg.assistant h4:first-child {
       margin-top: 0;
+    }
+    .msg.assistant hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 6px 0;
     }
 
     .msg.assistant code {
@@ -355,11 +369,11 @@
       background: rgba(0, 0, 0, 0.3);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 10px 12px;
-      margin: 6px 0;
+      padding: 8px 10px;
+      margin: 4px 0;
       overflow-x: auto;
       font-size: 12px;
-      line-height: 1.5;
+      line-height: 1.4;
     }
 
     .msg.assistant pre code {
@@ -372,9 +386,11 @@
     .msg.assistant blockquote {
       border-left: 3px solid var(--accent);
       padding-left: 10px;
-      margin: 6px 0;
+      margin: 4px 0;
       color: var(--text-secondary);
     }
+
+    .msg.assistant blockquote p { margin: 0; }
 
     .msg.assistant a {
       color: var(--accent);
@@ -385,14 +401,14 @@
 
     .msg.assistant table {
       border-collapse: collapse;
-      margin: 6px 0;
+      margin: 4px 0;
       font-size: 12px;
       width: 100%;
     }
 
     .msg.assistant th, .msg.assistant td {
       border: 1px solid var(--border);
-      padding: 4px 8px;
+      padding: 3px 8px;
       text-align: left;
     }
 
