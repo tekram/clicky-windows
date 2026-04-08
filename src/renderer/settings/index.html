@@ -203,6 +203,11 @@
   </div>
 
   <div class="field">
+    <label>OpenAI API Key</label>
+    <input type="password" id="openaiApiKey" placeholder="sk-... (Whisper transcription + TTS)">
+  </div>
+
+  <div class="field">
     <label>AssemblyAI API Key</label>
     <input type="password" id="assemblyaiApiKey" placeholder="Voice transcription">
   </div>
@@ -249,6 +254,7 @@
   <div class="field">
     <label>TTS Provider</label>
     <select id="ttsProvider">
+      <option value="openai">OpenAI TTS (natural)</option>
       <option value="elevenlabs">ElevenLabs (natural)</option>
       <option value="local">Windows SAPI (offline)</option>
     </select>
@@ -285,7 +291,7 @@
 
   <script>
     const fields = [
-      'anthropicApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
+      'anthropicApiKey', 'openaiApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
       'proxyUrl', 'useProxy', 'transcriptionProvider', 'ttsEnabled',
       'ttsProvider', 'claudeModel', 'hipaaMode'
     ];

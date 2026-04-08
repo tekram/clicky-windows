@@ -645,6 +645,11 @@
     </div>
 
     <div class="key-group">
+      <label>OpenAI <span class="badge optional">optional</span></label>
+      <input type="password" id="key-openai" placeholder="sk-... (voice transcription + TTS)">
+    </div>
+
+    <div class="key-group">
       <label>AssemblyAI <span class="badge optional">optional</span></label>
       <input type="password" id="key-assemblyai" placeholder="Voice transcription key">
     </div>
@@ -659,7 +664,7 @@
       <span class="saved" id="saved-msg">Saved</span>
     </div>
 
-    <p class="setup-hint">Only Anthropic is needed to get started. Others add voice features.</p>
+    <p class="setup-hint">Only Anthropic is needed. OpenAI adds voice input + natural TTS.</p>
   </div>
 
   <!-- Messages -->
@@ -711,6 +716,7 @@
     const sendBtn = document.getElementById('send');
     const welcome = document.getElementById('welcome');
     const keyAnthropicInput = document.getElementById('key-anthropic');
+    const keyOpenaiInput = document.getElementById('key-openai');
     const keyAssemblyaiInput = document.getElementById('key-assemblyai');
     const keyElevenlabsInput = document.getElementById('key-elevenlabs');
     const saveKeysBtn = document.getElementById('save-keys');
@@ -725,6 +731,7 @@
     // Load existing settings
     window.clicky.getSettings().then((settings) => {
       if (settings.anthropicApiKey) keyAnthropicInput.value = settings.anthropicApiKey;
+      if (settings.openaiApiKey) keyOpenaiInput.value = settings.openaiApiKey;
       if (settings.assemblyaiApiKey) keyAssemblyaiInput.value = settings.assemblyaiApiKey;
       if (settings.elevenlabsApiKey) keyElevenlabsInput.value = settings.elevenlabsApiKey;
 
@@ -762,8 +769,23 @@
 
       window.clicky.setSetting('anthropicApiKey', anthropicKey);
 
+      const openaiKey = keyOpenaiInput.value.trim();
+      if (openaiKey) {
+        window.clicky.setSetting('openaiApiKey', openaiKey);
+        // Auto-set OpenAI as transcription + TTS provider if no other keys
+        if (!keyAssemblyaiInput.value.trim()) {
+          window.clicky.setSetting('transcriptionProvider', 'openai');
+        }
+        if (!keyElevenlabsInput.value.trim()) {
+          window.clicky.setSetting('ttsProvider', 'openai');
+        }
+      }
+
       const assemblyaiKey = keyAssemblyaiInput.value.trim();
-      if (assemblyaiKey) window.clicky.setSetting('assemblyaiApiKey', assemblyaiKey);
+      if (assemblyaiKey) {
+        window.clicky.setSetting('assemblyaiApiKey', assemblyaiKey);
+        window.clicky.setSetting('transcriptionProvider', 'assemblyai');
+      }
 
       const elevenlabsKey = keyElevenlabsInput.value.trim();
       if (elevenlabsKey) {

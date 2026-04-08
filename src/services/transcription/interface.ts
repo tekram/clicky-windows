@@ -30,7 +30,7 @@ export function createTranscriptionProvider(
 
     case "openai":
       const { OpenAITranscriptionProvider } = require("./openai");
-      return new OpenAITranscriptionProvider(settings.get("anthropicApiKey")); // reuse key field or add openai key
+      return new OpenAITranscriptionProvider(settings.get("openaiApiKey"));
 
     case "whisper-local":
       const { WhisperLocalProvider } = require("./whisper-local");

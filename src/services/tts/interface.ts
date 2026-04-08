@@ -16,6 +16,13 @@ export function createTTSProvider(settings: SettingsStore): TTSProvider {
         settings.get("elevenlabsVoiceId")
       );
     }
+    case "openai": {
+      const { OpenAITTS } = require("./openai");
+      return new OpenAITTS(
+        settings.get("openaiApiKey"),
+        settings.get("openaiTtsVoice")
+      );
+    }
     case "local": {
       const { LocalTTS } = require("./local");
       return new LocalTTS();

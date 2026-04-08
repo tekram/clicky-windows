@@ -5,6 +5,7 @@ import * as path from "path";
 interface SettingsSchema {
   // API Keys (BYOK)
   anthropicApiKey: string;
+  openaiApiKey: string;
   assemblyaiApiKey: string;
   elevenlabsApiKey: string;
 
@@ -17,8 +18,9 @@ interface SettingsSchema {
 
   // TTS
   ttsEnabled: boolean;
-  ttsProvider: "elevenlabs" | "local";
+  ttsProvider: "elevenlabs" | "openai" | "local";
   elevenlabsVoiceId: string;
+  openaiTtsVoice: string;
 
   // Hotkey
   pushToTalkHotkey: string;
@@ -32,6 +34,7 @@ interface SettingsSchema {
 
 const defaults: SettingsSchema = {
   anthropicApiKey: "",
+  openaiApiKey: "",
   assemblyaiApiKey: "",
   elevenlabsApiKey: "",
   proxyUrl: "",
@@ -40,6 +43,7 @@ const defaults: SettingsSchema = {
   ttsEnabled: true,
   ttsProvider: "local",
   elevenlabsVoiceId: "kPzsL2i3teMYv0FxEYQ6",
+  openaiTtsVoice: "alloy",
   pushToTalkHotkey: "Ctrl+Alt",
   claudeModel: "claude-sonnet-4-5-20250929",
   hipaaMode: false,
