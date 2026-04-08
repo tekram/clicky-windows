@@ -59,15 +59,16 @@
     #titlebar .logo {
       width: 28px;
       height: 28px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #638cff 0%, #a78bfa 100%);
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(99, 140, 255, 0.3);
+      filter: drop-shadow(0 2px 6px rgba(99, 140, 255, 0.4));
+    }
+
+    #titlebar .logo svg {
+      width: 22px;
+      height: 22px;
     }
 
     #titlebar .title {
@@ -389,16 +390,18 @@
     }
 
     .welcome .icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #638cff 0%, #a78bfa 100%);
+      width: 56px;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
       margin-bottom: 4px;
-      box-shadow: 0 4px 20px rgba(99, 140, 255, 0.3);
+      filter: drop-shadow(0 4px 20px rgba(99, 140, 255, 0.4));
+    }
+
+    .welcome .icon svg {
+      width: 48px;
+      height: 48px;
     }
 
     .welcome h2 {
@@ -434,7 +437,7 @@
 <body>
   <!-- Title Bar -->
   <div id="titlebar">
-    <div class="logo">C</div>
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gem" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#638cff"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs><path d="M12 2L22 12L12 22L2 12Z" fill="url(#gem)"/><path d="M12 2L17 7L12 12L7 7Z" fill="rgba(255,255,255,0.25)"/><path d="M12 12L17 7L22 12L17 17Z" fill="rgba(255,255,255,0.1)"/></svg></div>
     <span class="title">Clicky</span>
     <div class="status" id="status-dot"></div>
     <button class="gear-btn" id="toggle-setup" title="API Keys">
@@ -472,7 +475,7 @@
   <!-- Messages -->
   <div id="messages">
     <div class="welcome" id="welcome">
-      <div class="icon">C</div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gem-lg" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#638cff"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs><path d="M12 2L22 12L12 22L2 12Z" fill="url(#gem-lg)"/><path d="M12 2L17 7L12 12L7 7Z" fill="rgba(255,255,255,0.25)"/><path d="M12 12L17 7L22 12L17 17Z" fill="rgba(255,255,255,0.1)"/></svg></div>
       <h2>What can I help with?</h2>
       <p>I can see your screen and answer questions about what's on it. Just type below.</p>
       <div class="shortcuts">
