@@ -29,7 +29,6 @@
   "license": "MIT",
   "devDependencies": {
     "@electron-forge/cli": "^7.6.0",
-    "@electron-forge/maker-nsis": "^7.6.0",
     "@electron-forge/maker-zip": "^7.6.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
@@ -39,7 +38,8 @@
     "typescript": "^5.7.0"
   },
   "dependencies": {
-    "electron-store": "^10.0.0",
-    "electron-updater": "^6.3.0"
+    "@types/ws": "^8.18.1",
+    "electron-updater": "^6.3.0",
+    "ws": "^8.20.0"
   }
 }

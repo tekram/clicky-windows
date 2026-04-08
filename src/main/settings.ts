@@ -1,4 +1,6 @@
-import Store from "electron-store";
+import { app } from "electron";
+import * as fs from "fs";
+import * as path from "path";
 
 interface SettingsSchema {
   // API Keys (BYOK)
@@ -43,37 +45,56 @@ const defaults: SettingsSchema = {
   hipaaMode: false,
 };
 
+/**
+ * Simple JSON file settings store. Avoids electron-store ESM issues.
+ */
 export class SettingsStore {
-  private store: Store<SettingsSchema>;
+  private data: SettingsSchema;
+  private filePath: string;
 
   constructor() {
-    this.store = new Store<SettingsSchema>({
-      defaults,
-      encryptionKey: "clicky-windows-settings",
-    });
+    const userDataPath = app.isReady()
+      ? app.getPath("userData")
+      : path.join(
+          process.env.APPDATA || process.env.HOME || ".",
+          "clicky-windows"
+        );
+
+    this.filePath = path.join(userDataPath, "settings.json");
+    this.data = { ...defaults };
+
+    try {
+      if (fs.existsSync(this.filePath)) {
+        const raw = fs.readFileSync(this.filePath, "utf-8");
+        const parsed = JSON.parse(raw) as Partial<SettingsSchema>;
+        this.data = { ...defaults, ...parsed };
+      }
+    } catch {
+      // Use defaults on any read error
+    }
   }
 
   get<K extends keyof SettingsSchema>(
     key: K,
     fallback?: SettingsSchema[K]
   ): SettingsSchema[K] {
-    return this.store.get(key, fallback);
+    const val = this.data[key];
+    if (val === undefined && fallback !== undefined) return fallback;
+    return val;
   }
 
   set<K extends keyof SettingsSchema>(
     key: K,
     value: SettingsSchema[K]
   ): void {
-    this.store.set(key, value);
+    this.data[key] = value;
+    this.save();
   }
 
   getAll(): SettingsSchema {
-    return this.store.store;
+    return { ...this.data };
   }
 
-  /**
-   * Check if minimum required keys are configured for operation.
-   */
   isConfigured(): boolean {
     if (this.get("useProxy") && this.get("proxyUrl")) {
       return true;
@@ -81,10 +102,19 @@ export class SettingsStore {
     return !!this.get("anthropicApiKey");
   }
 
-  /**
-   * In HIPAA mode, enforce local-only processing.
-   */
   isHipaaMode(): boolean {
     return this.get("hipaaMode");
+  }
+
+  private save(): void {
+    try {
+      const dir = path.dirname(this.filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(this.filePath, JSON.stringify(this.data, null, 2));
+    } catch {
+      // Silent fail on write error
+    }
   }
 }
