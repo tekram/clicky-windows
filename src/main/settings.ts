@@ -38,10 +38,10 @@ const defaults: SettingsSchema = {
   useProxy: false,
   transcriptionProvider: "assemblyai",
   ttsEnabled: true,
-  ttsProvider: "elevenlabs",
+  ttsProvider: "local",
   elevenlabsVoiceId: "kPzsL2i3teMYv0FxEYQ6",
   pushToTalkHotkey: "Ctrl+Alt",
-  claudeModel: "claude-sonnet-4-6-20250514",
+  claudeModel: "claude-sonnet-4-5-20250929",
   hipaaMode: false,
 };
 

@@ -94,6 +94,15 @@ function setupIPC(): void {
       shell.openExternal(url);
     }
   });
+
+  // Window controls
+  ipcMain.handle("window:minimize", (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize();
+  });
+
+  ipcMain.handle("window:close", (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.close();
+  });
 }
 
 app.whenReady().then(() => {

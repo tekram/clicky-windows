@@ -40,6 +40,10 @@ contextBridge.exposeInMainWorld("clicky", {
     ipcRenderer.invoke("shell:openExternal", url);
   },
 
+  // Window controls
+  minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
+  closeWindow: () => ipcRenderer.invoke("window:close"),
+
   // Audio
   sendTranscript: (transcript: string) => {
     ipcRenderer.send("audio:transcript-ready", transcript);

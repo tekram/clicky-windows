@@ -69,10 +69,12 @@ export class CompanionManager {
       this.overlayWindow.webContents.send("overlay:point", pointTags);
     }
 
-    // 4. Speak response (strip POINT tags from spoken text)
+    // 4. Speak response (strip POINT tags from spoken text) — non-blocking
     const spokenText = response.text.replace(/\[POINT:[^\]]+\]/g, "").trim();
     if (this.settings.get("ttsEnabled") && spokenText) {
-      await this.tts.speak(spokenText);
+      this.tts.speak(spokenText).catch((err) => {
+        console.warn("TTS failed (non-fatal):", err.message);
+      });
     }
 
     return response.text;
