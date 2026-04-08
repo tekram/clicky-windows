@@ -4,110 +4,198 @@
   <meta charset="UTF-8">
   <title>Clicky Settings</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: rgba(255, 255, 255, 0.04);
+      --bg-tertiary: rgba(255, 255, 255, 0.06);
+      --bg-hover: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 140, 255, 0.5);
+      --text-primary: #f0f0f5;
+      --text-secondary: rgba(255, 255, 255, 0.55);
+      --text-tertiary: rgba(255, 255, 255, 0.3);
+      --accent: #638cff;
+      --accent-hover: #7da0ff;
+      --accent-glow: rgba(99, 140, 255, 0.15);
+      --success: #34d399;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
+      font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       padding: 24px;
+      -webkit-font-smoothing: antialiased;
+      overflow-y: auto;
     }
 
-    h1 { font-size: 20px; margin-bottom: 24px; color: #fff; }
-    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin: 20px 0 12px; }
+    body::-webkit-scrollbar { width: 4px; }
+    body::-webkit-scrollbar-track { background: transparent; }
+    body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
-    .field {
-      margin-bottom: 16px;
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
     }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+      margin: 24px 0 12px;
+    }
+
+    .section-label:first-of-type { margin-top: 0; }
+
+    .field { margin-bottom: 14px; }
 
     label {
       display: block;
-      font-size: 13px;
-      margin-bottom: 4px;
-      color: #aaa;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
     }
 
     input[type="text"], input[type="password"], select {
       width: 100%;
-      padding: 8px 12px;
-      background: #16213e;
-      border: 1px solid #333;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 14px;
+      padding: 9px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
       outline: none;
+      transition: all 0.2s ease;
     }
 
     input:focus, select:focus {
-      border-color: #3b82f6;
+      border-color: var(--border-focus);
+      background: var(--bg-tertiary);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-    .toggle {
+    select { cursor: pointer; }
+    select option { background: #1a1a2e; }
+
+    .toggle-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      cursor: pointer;
+      justify-content: space-between;
+      padding: 10px 0;
     }
 
-    .toggle input[type="checkbox"] {
-      width: 36px;
-      height: 20px;
-      appearance: none;
-      background: #333;
-      border-radius: 10px;
+    .toggle-row label { margin-bottom: 0; }
+
+    .toggle {
       position: relative;
+      width: 40px;
+      height: 22px;
       cursor: pointer;
-      outline: none;
     }
 
-    .toggle input[type="checkbox"]::after {
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle .slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 11px;
+      transition: all 0.3s ease;
+    }
+
+    .toggle .slider::after {
       content: '';
+      position: absolute;
       width: 16px;
       height: 16px;
-      background: #666;
-      border-radius: 50%;
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      transition: all 0.2s;
-    }
-
-    .toggle input[type="checkbox"]:checked {
-      background: #3b82f6;
-    }
-
-    .toggle input[type="checkbox"]:checked::after {
-      left: 18px;
       background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
-    .status {
+    .toggle input:checked + .slider {
+      background: var(--accent);
+    }
+
+    .toggle input:checked + .slider::after {
+      left: 21px;
+    }
+
+    .status-bar {
       margin-top: 24px;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .status.ok { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-    .status.warn { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+    .status-bar.ok {
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.15);
+      color: var(--success);
+    }
 
-    button {
-      margin-top: 16px;
-      padding: 10px 20px;
-      background: #3b82f6;
+    .status-bar.warn {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+    }
+
+    .status-bar .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    button.save {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
 
-    button:hover { background: #2563eb; }
+    button.save:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 2px 12px rgba(99, 140, 255, 0.3);
+    }
+
+    button.save:active { transform: scale(0.98); }
   </style>
 </head>
 <body>
-  <h1>Clicky Settings</h1>
+  <h1>Settings</h1>
 
-  <h2>API Keys (BYOK)</h2>
+  <div class="section-label">API Keys</div>
 
   <div class="field">
     <label>Anthropic API Key</label>
@@ -116,72 +204,82 @@
 
   <div class="field">
     <label>AssemblyAI API Key</label>
-    <input type="password" id="assemblyaiApiKey" placeholder="(for voice transcription)">
+    <input type="password" id="assemblyaiApiKey" placeholder="Voice transcription">
   </div>
 
   <div class="field">
     <label>ElevenLabs API Key</label>
-    <input type="password" id="elevenlabsApiKey" placeholder="(for text-to-speech)">
+    <input type="password" id="elevenlabsApiKey" placeholder="Text-to-speech">
   </div>
 
-  <h2>Or Use Proxy</h2>
+  <div class="section-label">Proxy</div>
 
-  <div class="field toggle">
-    <input type="checkbox" id="useProxy">
-    <label for="useProxy">Use API proxy instead of direct keys</label>
+  <div class="toggle-row">
+    <label>Use API proxy</label>
+    <label class="toggle">
+      <input type="checkbox" id="useProxy">
+      <span class="slider"></span>
+    </label>
   </div>
 
   <div class="field">
     <label>Proxy URL</label>
-    <input type="text" id="proxyUrl" placeholder="https://your-worker.your-subdomain.workers.dev">
+    <input type="text" id="proxyUrl" placeholder="https://your-worker.workers.dev">
   </div>
 
-  <h2>Transcription</h2>
+  <div class="section-label">Voice</div>
 
   <div class="field">
-    <label>Provider</label>
+    <label>Transcription Provider</label>
     <select id="transcriptionProvider">
-      <option value="assemblyai">AssemblyAI (cloud, best quality)</option>
-      <option value="openai">OpenAI Whisper API (cloud)</option>
-      <option value="whisper-local">Whisper Local (offline, HIPAA-safe)</option>
+      <option value="assemblyai">AssemblyAI (cloud)</option>
+      <option value="openai">OpenAI Whisper (cloud)</option>
+      <option value="whisper-local">Whisper Local (offline)</option>
     </select>
   </div>
 
-  <h2>Text-to-Speech</h2>
-
-  <div class="field toggle">
-    <input type="checkbox" id="ttsEnabled" checked>
-    <label for="ttsEnabled">Enable spoken responses</label>
+  <div class="toggle-row">
+    <label>Spoken responses</label>
+    <label class="toggle">
+      <input type="checkbox" id="ttsEnabled" checked>
+      <span class="slider"></span>
+    </label>
   </div>
 
   <div class="field">
     <label>TTS Provider</label>
     <select id="ttsProvider">
-      <option value="elevenlabs">ElevenLabs (cloud, natural voice)</option>
-      <option value="local">Windows SAPI (offline, HIPAA-safe)</option>
+      <option value="elevenlabs">ElevenLabs (natural)</option>
+      <option value="local">Windows SAPI (offline)</option>
     </select>
   </div>
 
-  <h2>Model</h2>
+  <div class="section-label">Model</div>
 
   <div class="field">
     <label>Claude Model</label>
     <select id="claudeModel">
-      <option value="claude-sonnet-4-6-20250514">Claude Sonnet 4.6 (fast)</option>
-      <option value="claude-opus-4-6-20250514">Claude Opus 4.6 (smartest)</option>
+      <option value="claude-sonnet-4-6-20250514">Claude Sonnet 4.6</option>
+      <option value="claude-opus-4-6-20250514">Claude Opus 4.6</option>
     </select>
   </div>
 
-  <h2>HIPAA Mode</h2>
+  <div class="section-label">Compliance</div>
 
-  <div class="field toggle">
-    <input type="checkbox" id="hipaaMode">
-    <label for="hipaaMode">HIPAA mode (forces local transcription + local TTS)</label>
+  <div class="toggle-row">
+    <label>HIPAA Mode (local processing only)</label>
+    <label class="toggle">
+      <input type="checkbox" id="hipaaMode">
+      <span class="slider"></span>
+    </label>
   </div>
 
-  <div id="status" class="status warn">Enter your Anthropic API key to get started.</div>
+  <div id="status" class="status-bar warn">
+    <div class="dot"></div>
+    <span>Enter your Anthropic API key to get started</span>
+  </div>
 
-  <button id="save">Save Settings</button>
+  <button class="save" id="save">Save Settings</button>
 
   <script>
     const fields = [
@@ -190,21 +288,16 @@
       'ttsProvider', 'claudeModel', 'hipaaMode'
     ];
 
-    // Load settings
     window.clicky.getSettings().then((settings) => {
       fields.forEach((key) => {
         const el = document.getElementById(key);
         if (!el) return;
-        if (el.type === 'checkbox') {
-          el.checked = !!settings[key];
-        } else {
-          el.value = settings[key] || '';
-        }
+        if (el.type === 'checkbox') el.checked = !!settings[key];
+        else el.value = settings[key] || '';
       });
       updateStatus(settings);
     });
 
-    // HIPAA mode enforcement
     document.getElementById('hipaaMode').addEventListener('change', (e) => {
       if (e.target.checked) {
         document.getElementById('transcriptionProvider').value = 'whisper-local';
@@ -212,30 +305,29 @@
       }
     });
 
-    // Save
     document.getElementById('save').addEventListener('click', () => {
+      const values = {};
       fields.forEach((key) => {
         const el = document.getElementById(key);
-        const value = el.type === 'checkbox' ? el.checked : el.value;
-        window.clicky.setSetting(key, value);
+        values[key] = el.type === 'checkbox' ? el.checked : el.value;
+        window.clicky.setSetting(key, values[key]);
       });
 
       const status = document.getElementById('status');
-      status.textContent = 'Settings saved!';
-      status.className = 'status ok';
+      status.textContent = '';
+      status.className = 'status-bar ok';
+      status.innerHTML = '<div class="dot"></div><span>Settings saved</span>';
+      setTimeout(() => updateStatus(values), 2000);
     });
 
     function updateStatus(settings) {
       const status = document.getElementById('status');
-      if (settings.useProxy && settings.proxyUrl) {
-        status.textContent = 'Using proxy — ready to go.';
-        status.className = 'status ok';
-      } else if (settings.anthropicApiKey) {
-        status.textContent = 'API key configured — ready to go.';
-        status.className = 'status ok';
+      if ((settings.useProxy && settings.proxyUrl) || settings.anthropicApiKey) {
+        status.className = 'status-bar ok';
+        status.innerHTML = '<div class="dot"></div><span>Ready</span>';
       } else {
-        status.textContent = 'Enter your Anthropic API key to get started.';
-        status.className = 'status warn';
+        status.className = 'status-bar warn';
+        status.innerHTML = '<div class="dot"></div><span>Enter your Anthropic API key to get started</span>';
       }
     }
   </script>

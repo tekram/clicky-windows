@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Clicky</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: rgba(255, 255, 255, 0.04);
+      --bg-tertiary: rgba(255, 255, 255, 0.06);
+      --bg-hover: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 140, 255, 0.5);
+      --text-primary: #f0f0f5;
+      --text-secondary: rgba(255, 255, 255, 0.55);
+      --text-tertiary: rgba(255, 255, 255, 0.3);
+      --accent: #638cff;
+      --accent-hover: #7da0ff;
+      --accent-glow: rgba(99, 140, 255, 0.15);
+      --success: #34d399;
+      --error: #f87171;
+      --msg-user: linear-gradient(135deg, #638cff 0%, #5a7af5 100%);
+      --msg-assistant: rgba(255, 255, 255, 0.05);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Title Bar ── */
+    #titlebar {
+      height: 48px;
+      padding: 0 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+      backdrop-filter: blur(40px);
+    }
+
+    #titlebar .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #638cff 0%, #a78bfa 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(99, 140, 255, 0.3);
+    }
+
+    #titlebar .title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    #titlebar .status {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+      margin-left: auto;
+      transition: all 0.4s ease;
+    }
+
+    #titlebar .status.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+    }
+
+    #titlebar .gear-btn {
+      -webkit-app-region: no-drag;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+    }
+
+    #titlebar .gear-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    /* ── Setup Panel ── */
+    #setup {
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #setup.hidden { display: none; }
+
+    #setup h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .key-group {
+      margin-bottom: 12px;
+    }
+
+    .key-group:last-of-type { margin-bottom: 16px; }
+
+    .key-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .key-group label .badge {
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .badge.required { background: rgba(248, 113, 113, 0.15); color: var(--error); }
+    .badge.optional { background: rgba(255, 255, 255, 0.06); color: var(--text-tertiary); }
+
+    .key-group input {
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .key-group input::placeholder { color: var(--text-tertiary); }
+
+    .key-group input:focus {
+      border-color: var(--border-focus);
+      background: var(--bg-tertiary);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .key-group input.error {
+      border-color: rgba(248, 113, 113, 0.5);
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1);
+    }
+
+    .setup-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-primary {
+      padding: 8px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 2px 12px rgba(99, 140, 255, 0.3);
+    }
+
+    .btn-primary:active { transform: scale(0.97); }
+
+    .setup-footer .saved {
+      font-size: 11px;
+      color: var(--success);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .setup-footer .saved.visible { opacity: 1; }
+
+    .setup-hint {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      margin-top: 8px;
+    }
+
+    .setup-hint a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── Messages ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scroll-behavior: smooth;
+    }
+
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .msg {
+      max-width: 82%;
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      animation: msgIn 0.25s ease;
+    }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--msg-user);
+      color: #fff;
+      border-radius: var(--radius-lg) var(--radius-lg) 4px var(--radius-lg);
+      box-shadow: 0 2px 8px rgba(99, 140, 255, 0.2);
+    }
+
+    .msg.assistant {
+      align-self: flex-start;
+      background: var(--msg-assistant);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px;
+      color: var(--text-primary);
+    }
+
+    .msg.system {
+      align-self: center;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      background: none;
+      padding: 8px 0;
+    }
+
+    /* Loading indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 5px;
+      padding: 14px 18px;
+      align-items: center;
+    }
+
+    .typing-indicator span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+      animation: typingPulse 1.4s ease-in-out infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes typingPulse {
+      0%, 60%, 100% { transform: scale(1); opacity: 0.4; }
+      30% { transform: scale(1.3); opacity: 1; }
+    }
+
+    /* ── Input Area ── */
+    #input-area {
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
+      backdrop-filter: blur(40px);
+    }
+
+    #input {
+      flex: 1;
+      padding: 10px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    #input:focus {
+      border-color: var(--border-focus);
+      background: var(--bg-tertiary);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    #input::placeholder { color: var(--text-tertiary); }
+    #input:disabled { opacity: 0.35; }
+
+    #send {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    #send:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 2px 12px rgba(99, 140, 255, 0.4);
+      transform: scale(1.05);
+    }
+
+    #send:active { transform: scale(0.95); }
+    #send:disabled { background: var(--bg-tertiary); cursor: not-allowed; transform: none; box-shadow: none; }
+
+    #send svg { width: 16px; height: 16px; }
+
+    /* ── Welcome state ── */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .welcome .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #638cff 0%, #a78bfa 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 4px;
+      box-shadow: 0 4px 20px rgba(99, 140, 255, 0.3);
+    }
+
+    .welcome h2 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .welcome p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 260px;
+    }
+
+    .welcome .shortcuts {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .welcome .shortcuts kbd {
+      padding: 3px 8px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 10px;
+      font-family: inherit;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Title Bar -->
+  <div id="titlebar">
+    <div class="logo">C</div>
+    <span class="title">Clicky</span>
+    <div class="status" id="status-dot"></div>
+    <button class="gear-btn" id="toggle-setup" title="API Keys">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+  </div>
+
+  <!-- Setup Panel -->
+  <div id="setup">
+    <h3>Connect your API keys</h3>
+
+    <div class="key-group">
+      <label>Anthropic <span class="badge required">required</span></label>
+      <input type="password" id="key-anthropic" placeholder="sk-ant-api03-...">
+    </div>
+
+    <div class="key-group">
+      <label>AssemblyAI <span class="badge optional">optional</span></label>
+      <input type="password" id="key-assemblyai" placeholder="Voice transcription key">
+    </div>
+
+    <div class="key-group">
+      <label>ElevenLabs <span class="badge optional">optional</span></label>
+      <input type="password" id="key-elevenlabs" placeholder="Text-to-speech key">
+    </div>
+
+    <div class="setup-footer">
+      <button class="btn-primary" id="save-keys">Save</button>
+      <span class="saved" id="saved-msg">Saved</span>
+    </div>
+
+    <p class="setup-hint">Only Anthropic is needed to get started. Others add voice features.</p>
+  </div>
+
+  <!-- Messages -->
+  <div id="messages">
+    <div class="welcome" id="welcome">
+      <div class="icon">C</div>
+      <h2>What can I help with?</h2>
+      <p>I can see your screen and answer questions about what's on it. Just type below.</p>
+      <div class="shortcuts">
+        <kbd>Enter</kbd><span style="color:var(--text-tertiary);font-size:11px">to send</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div id="input-area">
+    <input type="text" id="input" placeholder="Ask about your screen..." autofocus disabled>
+    <button id="send" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+
+  <script>
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const welcome = document.getElementById('welcome');
+    const keyAnthropicInput = document.getElementById('key-anthropic');
+    const keyAssemblyaiInput = document.getElementById('key-assemblyai');
+    const keyElevenlabsInput = document.getElementById('key-elevenlabs');
+    const saveKeysBtn = document.getElementById('save-keys');
+    const savedMsg = document.getElementById('saved-msg');
+    const setup = document.getElementById('setup');
+    const statusDot = document.getElementById('status-dot');
+    const toggleSetupBtn = document.getElementById('toggle-setup');
+
+    let isConfigured = false;
+    let firstMessage = true;
+
+    // Load existing settings
+    window.clicky.getSettings().then((settings) => {
+      if (settings.anthropicApiKey) keyAnthropicInput.value = settings.anthropicApiKey;
+      if (settings.assemblyaiApiKey) keyAssemblyaiInput.value = settings.assemblyaiApiKey;
+      if (settings.elevenlabsApiKey) keyElevenlabsInput.value = settings.elevenlabsApiKey;
+
+      if (settings.anthropicApiKey) {
+        setConfigured(true);
+      }
+    });
+
+    // Toggle setup panel
+    toggleSetupBtn.addEventListener('click', () => {
+      setup.classList.toggle('hidden');
+    });
+
+    function setConfigured(configured) {
+      isConfigured = configured;
+      input.disabled = !configured;
+      sendBtn.disabled = !configured;
+      statusDot.className = configured ? 'status connected' : 'status';
+      if (configured) {
+        setup.classList.add('hidden');
+        input.focus();
+      } else {
+        setup.classList.remove('hidden');
+      }
+    }
+
+    // Save keys
+    saveKeysBtn.addEventListener('click', () => {
+      const anthropicKey = keyAnthropicInput.value.trim();
+      if (!anthropicKey) {
+        keyAnthropicInput.classList.add('error');
+        keyAnthropicInput.addEventListener('input', () => keyAnthropicInput.classList.remove('error'), { once: true });
+        return;
+      }
+
+      window.clicky.setSetting('anthropicApiKey', anthropicKey);
+
+      const assemblyaiKey = keyAssemblyaiInput.value.trim();
+      if (assemblyaiKey) window.clicky.setSetting('assemblyaiApiKey', assemblyaiKey);
+
+      const elevenlabsKey = keyElevenlabsInput.value.trim();
+      if (elevenlabsKey) {
+        window.clicky.setSetting('elevenlabsApiKey', elevenlabsKey);
+        window.clicky.setSetting('ttsProvider', 'elevenlabs');
+      }
+
+      savedMsg.classList.add('visible');
+      setTimeout(() => savedMsg.classList.remove('visible'), 2000);
+      setConfigured(true);
+    });
+
+    function addMessage(text, role) {
+      if (firstMessage) {
+        welcome.remove();
+        firstMessage = false;
+      }
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.textContent = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      return div;
+    }
+
+    function addLoading() {
+      if (firstMessage) {
+        welcome.remove();
+        firstMessage = false;
+      }
+      const div = document.createElement('div');
+      div.className = 'msg assistant';
+      div.id = 'loading-msg';
+      div.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      return div;
+    }
+
+    async function send() {
+      const text = input.value.trim();
+      if (!text || !isConfigured) return;
+
+      input.value = '';
+      sendBtn.disabled = true;
+      input.disabled = true;
+
+      addMessage(text, 'user');
+      addLoading();
+
+      try {
+        const response = await window.clicky.sendQuery(text);
+        document.getElementById('loading-msg')?.remove();
+        const displayText = response.replace(/\[POINT:[^\]]+\]/g, '').trim();
+        addMessage(displayText || '(no response)', 'assistant');
+      } catch (err) {
+        document.getElementById('loading-msg')?.remove();
+        addMessage('Error: ' + (err.message || err), 'system');
+      }
+
+      sendBtn.disabled = false;
+      input.disabled = false;
+      input.focus();
+    }
+
+    sendBtn.addEventListener('click', send);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -31,6 +31,10 @@ contextBridge.exposeInMainWorld("clicky", {
   setSetting: (key: string, value: unknown) =>
     ipcRenderer.invoke("settings:set", key, value),
 
+  // Chat — send a text query (captures screen + sends to Claude)
+  sendQuery: (text: string): Promise<string> =>
+    ipcRenderer.invoke("chat:query", text),
+
   // Audio
   sendTranscript: (transcript: string) => {
     ipcRenderer.send("audio:transcript-ready", transcript);
