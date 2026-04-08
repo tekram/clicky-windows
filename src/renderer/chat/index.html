@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Clicky</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
@@ -322,6 +323,82 @@
       font-size: 12px;
       background: none;
       padding: 8px 0;
+    }
+
+    /* Markdown in assistant messages */
+    .msg.assistant p { margin: 0 0 8px; }
+    .msg.assistant p:last-child { margin-bottom: 0; }
+    .msg.assistant ul, .msg.assistant ol { margin: 4px 0 8px 18px; padding: 0; }
+    .msg.assistant li { margin: 2px 0; }
+    .msg.assistant strong { color: #fff; font-weight: 600; }
+    .msg.assistant em { color: var(--text-secondary); }
+    .msg.assistant h1, .msg.assistant h2, .msg.assistant h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin: 8px 0 4px;
+    }
+    .msg.assistant h1:first-child, .msg.assistant h2:first-child, .msg.assistant h3:first-child {
+      margin-top: 0;
+    }
+
+    .msg.assistant code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: 'Cascadia Code', 'Consolas', 'SF Mono', monospace;
+      font-size: 12px;
+      color: #e2b3ff;
+    }
+
+    .msg.assistant pre {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin: 6px 0;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .msg.assistant pre code {
+      background: none;
+      padding: 0;
+      border-radius: 0;
+      color: var(--text-primary);
+    }
+
+    .msg.assistant blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 10px;
+      margin: 6px 0;
+      color: var(--text-secondary);
+    }
+
+    .msg.assistant a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .msg.assistant a:hover { text-decoration: underline; }
+
+    .msg.assistant table {
+      border-collapse: collapse;
+      margin: 6px 0;
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .msg.assistant th, .msg.assistant td {
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      text-align: left;
+    }
+
+    .msg.assistant th {
+      background: rgba(255, 255, 255, 0.05);
+      font-weight: 600;
     }
 
     /* Loading indicator */
@@ -805,7 +882,12 @@
       }
       const div = document.createElement('div');
       div.className = 'msg ' + role;
-      div.textContent = text;
+      if (role === 'assistant') {
+        // Render markdown for assistant responses
+        div.innerHTML = marked.parse(text, { breaks: true });
+      } else {
+        div.textContent = text;
+      }
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
       return div;
