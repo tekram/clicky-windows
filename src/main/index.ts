@@ -41,6 +41,7 @@ function createChatWindow(): BrowserWindow {
     show: false,
     frame: false,
     transparent: false,
+    alwaysOnTop: settings.get("alwaysOnTop"),
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "index.js"),
       contextIsolation: true,
@@ -87,6 +88,11 @@ function setupIPC(): void {
   ipcMain.handle("settings:getAll", () => settings.getAll());
   ipcMain.handle("settings:set", (_event, key: string, value: unknown) => {
     settings.set(key as keyof ReturnType<typeof settings.getAll>, value as never);
+
+    // Apply alwaysOnTop immediately
+    if (key === "alwaysOnTop" && chatWindow && !chatWindow.isDestroyed()) {
+      chatWindow.setAlwaysOnTop(!!value);
+    }
   });
 
   // Open URL in default browser

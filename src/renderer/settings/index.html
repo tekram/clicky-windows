@@ -308,6 +308,16 @@
     <input type="text" id="openrouterModel" placeholder="e.g. anthropic/claude-sonnet-4-5, google/gemini-2.5-pro">
   </div>
 
+  <div class="section-label">Window</div>
+
+  <div class="toggle-row">
+    <label>Always on top (chat stays visible)</label>
+    <label class="toggle">
+      <input type="checkbox" id="alwaysOnTop">
+      <span class="slider"></span>
+    </label>
+  </div>
+
   <div class="section-label">Compliance</div>
 
   <div class="toggle-row">
@@ -329,7 +339,8 @@
     const fields = [
       'anthropicApiKey', 'openaiApiKey', 'openrouterApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
       'proxyUrl', 'useProxy', 'pushToTalkHotkey', 'transcriptionProvider',
-      'aiProvider', 'claudeModel', 'openaiModel', 'openrouterModel', 'hipaaMode'
+      'aiProvider', 'claudeModel', 'openaiModel', 'openrouterModel',
+      'alwaysOnTop', 'hipaaMode'
     ];
 
     window.clicky.getSettings().then((settings) => {

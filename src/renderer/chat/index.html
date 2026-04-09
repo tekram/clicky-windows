@@ -789,6 +789,9 @@
     <div class="logo"><svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gem" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#638cff"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs><path d="M12 2L22 12L12 22L2 12Z" fill="url(#gem)"/><path d="M12 2L17 7L12 12L7 7Z" fill="rgba(255,255,255,0.25)"/><path d="M12 12L17 7L22 12L17 17Z" fill="rgba(255,255,255,0.1)"/></svg></div>
     <span class="title">Clicky</span>
     <div class="status" id="status-dot"></div>
+    <button class="gear-btn" id="pin-btn" title="Pin on top">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1z"/></svg>
+    </button>
     <button class="gear-btn" id="toggle-setup" title="API Keys">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
     </button>
@@ -1197,6 +1200,23 @@
         e.preventDefault();
         send();
       }
+    });
+
+    // ── Pin (always on top) toggle ──
+    const pinBtn = document.getElementById('pin-btn');
+    let isPinned = false;
+
+    window.clicky.getSettings().then((s) => {
+      isPinned = !!s.alwaysOnTop;
+      pinBtn.style.color = isPinned ? 'var(--accent)' : '';
+      pinBtn.title = isPinned ? 'Unpin from top' : 'Pin on top';
+    });
+
+    pinBtn.addEventListener('click', () => {
+      isPinned = !isPinned;
+      window.clicky.setSetting('alwaysOnTop', isPinned);
+      pinBtn.style.color = isPinned ? 'var(--accent)' : '';
+      pinBtn.title = isPinned ? 'Unpin from top' : 'Pin on top';
     });
 
     // ── Status bar ──

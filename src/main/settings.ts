@@ -32,6 +32,9 @@ interface SettingsSchema {
   openaiModel: string;
   openrouterModel: string;
 
+  // UI
+  alwaysOnTop: boolean;
+
   // HIPAA
   hipaaMode: boolean;
 }
@@ -50,6 +53,7 @@ const defaults: SettingsSchema = {
   elevenlabsVoiceId: "kPzsL2i3teMYv0FxEYQ6",
   openaiTtsVoice: "alloy",
   pushToTalkHotkey: "Ctrl+Shift",
+  alwaysOnTop: false,
   aiProvider: "anthropic",
   claudeModel: "claude-sonnet-4-5-20250929",
   openaiModel: "gpt-4o",
