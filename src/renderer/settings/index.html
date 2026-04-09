@@ -208,6 +208,11 @@
   </div>
 
   <div class="field">
+    <label>OpenRouter API Key</label>
+    <input type="password" id="openrouterApiKey" placeholder="sk-or-... (300+ models)">
+  </div>
+
+  <div class="field">
     <label>AssemblyAI API Key</label>
     <input type="password" id="assemblyaiApiKey" placeholder="Voice transcription">
   </div>
@@ -243,26 +248,28 @@
     </select>
   </div>
 
-  <div class="toggle-row">
-    <label>Spoken responses</label>
-    <label class="toggle">
-      <input type="checkbox" id="ttsEnabled" checked>
-      <span class="slider"></span>
-    </label>
-  </div>
-
   <div class="field">
-    <label>TTS Provider</label>
-    <select id="ttsProvider">
-      <option value="openai">OpenAI TTS (natural)</option>
-      <option value="elevenlabs">ElevenLabs (natural)</option>
-      <option value="local">Windows SAPI (offline)</option>
+    <label>Default Voice</label>
+    <select id="defaultVoice">
+      <option value="off">Off (text only)</option>
+      <option value="local">Windows Voice (offline, free)</option>
+      <option value="openai">OpenAI Voice (cloud, natural)</option>
+      <option value="elevenlabs">ElevenLabs Voice (cloud, premium)</option>
     </select>
   </div>
 
-  <div class="section-label">Model</div>
+  <div class="section-label">AI Provider</div>
 
   <div class="field">
+    <label>Provider</label>
+    <select id="aiProvider">
+      <option value="anthropic">Anthropic (Claude)</option>
+      <option value="openai">OpenAI (GPT)</option>
+      <option value="openrouter">OpenRouter (300+ models)</option>
+    </select>
+  </div>
+
+  <div class="field" id="claudeModelGroup">
     <label>Claude Model</label>
     <select id="claudeModel">
       <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (latest)</option>
@@ -270,6 +277,25 @@
       <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
       <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fastest)</option>
     </select>
+  </div>
+
+  <div class="field" id="openaiModelGroup" style="display:none">
+    <label>OpenAI Model</label>
+    <select id="openaiModel">
+      <option value="gpt-5.4">GPT-5.4 (most capable)</option>
+      <option value="gpt-5.4-mini">GPT-5.4 Mini (fast + cheap)</option>
+      <option value="gpt-5.4-nano">GPT-5.4 Nano (cheapest)</option>
+      <option value="gpt-4.1">GPT-4.1</option>
+      <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+      <option value="gpt-4.1-nano">GPT-4.1 Nano</option>
+      <option value="gpt-4o">GPT-4o</option>
+      <option value="gpt-4o-mini">GPT-4o Mini</option>
+    </select>
+  </div>
+
+  <div class="field" id="openrouterModelGroup" style="display:none">
+    <label>OpenRouter Model</label>
+    <input type="text" id="openrouterModel" placeholder="e.g. anthropic/claude-sonnet-4-5, google/gemini-2.5-pro">
   </div>
 
   <div class="section-label">Compliance</div>
@@ -291,9 +317,9 @@
 
   <script>
     const fields = [
-      'anthropicApiKey', 'openaiApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
-      'proxyUrl', 'useProxy', 'transcriptionProvider', 'ttsEnabled',
-      'ttsProvider', 'claudeModel', 'hipaaMode'
+      'anthropicApiKey', 'openaiApiKey', 'openrouterApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
+      'proxyUrl', 'useProxy', 'transcriptionProvider',
+      'aiProvider', 'claudeModel', 'openaiModel', 'openrouterModel', 'hipaaMode'
     ];
 
     window.clicky.getSettings().then((settings) => {
@@ -303,8 +329,28 @@
         if (el.type === 'checkbox') el.checked = !!settings[key];
         else el.value = settings[key] || '';
       });
+
+      // Load defaultVoice from ttsEnabled + ttsProvider
+      const voiceSelect = document.getElementById('defaultVoice');
+      if (!settings.ttsEnabled) {
+        voiceSelect.value = 'off';
+      } else {
+        voiceSelect.value = settings.ttsProvider || 'local';
+      }
+
+      updateProviderUI();
       updateStatus(settings);
     });
+
+    function updateProviderUI() {
+      const provider = document.getElementById('aiProvider').value;
+      document.getElementById('claudeModelGroup').style.display = provider === 'anthropic' ? '' : 'none';
+      document.getElementById('openaiModelGroup').style.display = provider === 'openai' ? '' : 'none';
+      document.getElementById('openrouterModelGroup').style.display = provider === 'openrouter' ? '' : 'none';
+    }
+
+    document.getElementById('aiProvider').addEventListener('change', updateProviderUI);
+    updateProviderUI();
 
     document.getElementById('hipaaMode').addEventListener('change', (e) => {
       if (e.target.checked) {
@@ -317,9 +363,21 @@
       const values = {};
       fields.forEach((key) => {
         const el = document.getElementById(key);
+        if (!el) return;
         values[key] = el.type === 'checkbox' ? el.checked : el.value;
         window.clicky.setSetting(key, values[key]);
       });
+
+      // Save defaultVoice as ttsEnabled + ttsProvider
+      const voice = document.getElementById('defaultVoice').value;
+      if (voice === 'off') {
+        window.clicky.setSetting('ttsEnabled', false);
+      } else {
+        window.clicky.setSetting('ttsEnabled', true);
+        window.clicky.setSetting('ttsProvider', voice);
+      }
+      values.ttsEnabled = voice !== 'off';
+      values.ttsProvider = voice === 'off' ? 'local' : voice;
 
       const status = document.getElementById('status');
       status.textContent = '';

@@ -48,7 +48,10 @@ function createChatWindow(): BrowserWindow {
   });
 
   win.loadFile(path.join(__dirname, "..", "..", "src", "renderer", "chat", "index.html"));
-  win.once("ready-to-show", () => win.show());
+  win.once("ready-to-show", () => {
+    win.show();
+    win.webContents.openDevTools({ mode: "detach" });
+  });
   return win;
 }
 

@@ -6,6 +6,7 @@ interface SettingsSchema {
   // API Keys (BYOK)
   anthropicApiKey: string;
   openaiApiKey: string;
+  openrouterApiKey: string;
   assemblyaiApiKey: string;
   elevenlabsApiKey: string;
 
@@ -25,8 +26,11 @@ interface SettingsSchema {
   // Hotkey
   pushToTalkHotkey: string;
 
-  // Model
+  // AI Provider
+  aiProvider: "anthropic" | "openai" | "openrouter";
   claudeModel: string;
+  openaiModel: string;
+  openrouterModel: string;
 
   // HIPAA
   hipaaMode: boolean;
@@ -35,6 +39,7 @@ interface SettingsSchema {
 const defaults: SettingsSchema = {
   anthropicApiKey: "",
   openaiApiKey: "",
+  openrouterApiKey: "",
   assemblyaiApiKey: "",
   elevenlabsApiKey: "",
   proxyUrl: "",
@@ -45,7 +50,10 @@ const defaults: SettingsSchema = {
   elevenlabsVoiceId: "kPzsL2i3teMYv0FxEYQ6",
   openaiTtsVoice: "alloy",
   pushToTalkHotkey: "Ctrl+Alt",
+  aiProvider: "anthropic",
   claudeModel: "claude-sonnet-4-5-20250929",
+  openaiModel: "gpt-4o",
+  openrouterModel: "anthropic/claude-sonnet-4-5",
   hipaaMode: false,
 };
 

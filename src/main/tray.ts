@@ -86,5 +86,10 @@ export function createTray(callbacks: TrayCallbacks): Tray {
   tray.setToolTip("Clicky — AI Screen Companion");
   tray.setContextMenu(contextMenu);
 
+  // Left-click opens chat directly
+  tray.on("click", () => {
+    callbacks.onChat();
+  });
+
   return tray;
 }

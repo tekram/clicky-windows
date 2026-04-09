@@ -2,15 +2,26 @@ import { BrowserWindow } from "electron";
 import { ScreenCapture, ScreenshotResult } from "./screenshot";
 import { SettingsStore } from "./settings";
 import { ClaudeService } from "../services/claude";
+import { OpenAIChatService } from "../services/openai-chat";
+import { OpenRouterChatService } from "../services/openrouter-chat";
 import {
   TranscriptionProvider,
   createTranscriptionProvider,
 } from "../services/transcription/interface";
-import { TTSProvider, createTTSProvider } from "../services/tts/interface";
+import { createTTSProvider } from "../services/tts/interface";
 
 interface ConversationEntry {
   role: "user" | "assistant";
   content: string;
+}
+
+interface AIProvider {
+  query(params: {
+    transcript: string;
+    screenshots: ScreenshotResult[];
+    cursorPosition: { x: number; y: number };
+    conversationHistory: ConversationEntry[];
+  }): Promise<{ text: string }>;
 }
 
 const MAX_CONVERSATION_HISTORY = 10;
@@ -18,38 +29,46 @@ const MAX_CONVERSATION_HISTORY = 10;
 /**
  * Central orchestrator — mirrors CompanionManager.swift from macOS version.
  *
- * Flow: voice → screenshot → claude → tts → overlay pointing
+ * Flow: voice → screenshot → ai (anthropic or openai) → tts → overlay pointing
  */
 export class CompanionManager {
   private settings: SettingsStore;
   private screenCapture: ScreenCapture;
-  private claude: ClaudeService;
   private transcription: TranscriptionProvider;
-  private tts: TTSProvider;
   private conversationHistory: ConversationEntry[] = [];
   private overlayWindow: BrowserWindow | null = null;
 
   constructor(settings: SettingsStore, overlayWindow: BrowserWindow | null) {
     this.settings = settings;
     this.screenCapture = new ScreenCapture();
-    this.claude = new ClaudeService(settings);
     this.transcription = createTranscriptionProvider(settings);
-    this.tts = createTTSProvider(settings);
     this.overlayWindow = overlayWindow;
   }
 
+  private getAIProvider(): AIProvider {
+    const provider = this.settings.get("aiProvider");
+    if (provider === "openai") {
+      return new OpenAIChatService(this.settings);
+    }
+    if (provider === "openrouter") {
+      return new OpenRouterChatService(this.settings);
+    }
+    return new ClaudeService(this.settings);
+  }
+
   /**
-   * Process a user query: capture screen, send to Claude, speak response.
+   * Process a user query: capture screen, send to AI, speak response.
    */
   async processQuery(transcript: string): Promise<string> {
     // 1. Capture screenshots
     const screenshots = await this.screenCapture.captureAllScreens();
     const cursorPos = this.screenCapture.getCursorPosition();
 
-    // 2. Send to Claude with conversation history
+    // 2. Send to AI provider with conversation history
     this.conversationHistory.push({ role: "user", content: transcript });
 
-    const response = await this.claude.query({
+    const ai = this.getAIProvider();
+    const response = await ai.query({
       transcript,
       screenshots,
       cursorPosition: cursorPos,
@@ -70,11 +89,21 @@ export class CompanionManager {
     }
 
     // 4. Speak response (strip POINT tags from spoken text) — non-blocking
+    //    Re-read settings each time so chat toggle changes take effect immediately
     const spokenText = response.text.replace(/\[POINT:[^\]]+\]/g, "").trim();
-    if (this.settings.get("ttsEnabled") && spokenText) {
-      this.tts.speak(spokenText).catch((err) => {
-        console.warn("TTS failed (non-fatal):", err.message);
-      });
+    const ttsOn = this.settings.get("ttsEnabled");
+    const ttsProv = this.settings.get("ttsProvider");
+    console.log(`TTS check: enabled=${ttsOn}, provider=${ttsProv}, textLen=${spokenText.length}`);
+    if (ttsOn && spokenText) {
+      try {
+        const tts = createTTSProvider(this.settings);
+        console.log("TTS: speaking with", ttsProv);
+        tts.speak(spokenText).catch((err) => {
+          console.warn("TTS failed (non-fatal):", err.message);
+        });
+      } catch (err: unknown) {
+        console.warn("TTS provider creation failed:", err instanceof Error ? err.message : err);
+      }
     }
 
     return response.text;

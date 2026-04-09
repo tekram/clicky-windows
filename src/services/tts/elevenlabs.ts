@@ -1,4 +1,8 @@
 import { TTSProvider } from "./interface";
+import { exec } from "child_process";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 
 /**
  * ElevenLabs TTS — matches macOS version's ElevenLabsTTSClient.
@@ -8,6 +12,7 @@ export class ElevenLabsTTS implements TTSProvider {
   private apiKey: string;
   private voiceId: string;
   private abortController: AbortController | null = null;
+  private currentProcess: ReturnType<typeof exec> | null = null;
 
   constructor(apiKey: string, voiceId: string) {
     this.apiKey = apiKey;
@@ -15,7 +20,7 @@ export class ElevenLabsTTS implements TTSProvider {
   }
 
   async speak(text: string): Promise<void> {
-    this.stop(); // Cancel any in-progress speech
+    this.stop();
     this.abortController = new AbortController();
 
     const response = await fetch(
@@ -42,19 +47,43 @@ export class ElevenLabsTTS implements TTSProvider {
       throw new Error(`ElevenLabs error: ${response.status}`);
     }
 
-    // Audio playback will be handled by sending the audio data
-    // to the renderer process via IPC for Web Audio API playback
-    const audioBuffer = await response.arrayBuffer();
+    const audioBuffer = Buffer.from(await response.arrayBuffer());
 
-    // TODO: Send to renderer for playback
-    // mainWindow.webContents.send('tts:play', Buffer.from(audioBuffer));
-    console.log(`TTS: generated ${audioBuffer.byteLength} bytes of audio`);
+    // Write to temp file and play via PowerShell
+    const tmpFile = path.join(os.tmpdir(), `clicky-tts-${Date.now()}.mp3`);
+    fs.writeFileSync(tmpFile, audioBuffer);
+
+    return new Promise((resolve, reject) => {
+      const psCmd = [
+        "Add-Type -AssemblyName presentationCore",
+        "$p = New-Object System.Windows.Media.MediaPlayer",
+        `$p.Open([Uri]'${tmpFile}')`,
+        "$p.Play()",
+        "Start-Sleep -Seconds 8",
+        "$p.Close()",
+      ].join("; ");
+      const cmd = `powershell -Command "${psCmd}"`;
+
+      this.currentProcess = exec(cmd, { timeout: 60000 }, (error) => {
+        this.currentProcess = null;
+        try { fs.unlinkSync(tmpFile); } catch {}
+        if (error && !error.killed) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 
   stop(): void {
     if (this.abortController) {
       this.abortController.abort();
       this.abortController = null;
+    }
+    if (this.currentProcess) {
+      this.currentProcess.kill();
+      this.currentProcess = null;
     }
   }
 }

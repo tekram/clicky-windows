@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Clicky</title>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
@@ -500,18 +500,20 @@
     #send:disabled { background: var(--bg-tertiary); cursor: not-allowed; transform: none; box-shadow: none; }
 
     .tts-btn {
-      width: 36px;
       height: 36px;
+      padding: 0 10px;
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       color: var(--text-secondary);
-      border-radius: 50%;
+      border-radius: 18px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 2px;
       transition: all 0.2s ease;
       flex-shrink: 0;
+      font-family: inherit;
     }
 
     .tts-btn:hover {
@@ -519,7 +521,13 @@
       color: var(--text-primary);
     }
 
-    .tts-btn.active {
+    .tts-btn.active-local {
+      background: rgba(52, 211, 153, 0.1);
+      border-color: rgba(52, 211, 153, 0.4);
+      color: var(--success);
+    }
+
+    .tts-btn.active-cloud {
       background: var(--accent-glow);
       border-color: var(--accent);
       color: var(--accent);
@@ -729,17 +737,37 @@
   </div>
 
   <!-- Setup Panel -->
-  <div id="setup">
+  <div id="setup" class="hidden">
     <h3>Connect your API keys</h3>
 
     <div class="key-group">
-      <label>Anthropic <span class="badge required">required</span></label>
+      <label>AI Provider</label>
+      <select id="setup-provider" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px;font-family:inherit;outline:none;">
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="openai">OpenAI (GPT)</option>
+        <option value="openrouter">OpenRouter (300+ models)</option>
+      </select>
+    </div>
+
+    <div class="key-group" id="setup-model-group">
+      <label>Model</label>
+      <select id="setup-model" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px;font-family:inherit;outline:none;">
+      </select>
+    </div>
+
+    <div class="key-group">
+      <label>Anthropic Key <span class="badge" id="badge-anthropic">required</span></label>
       <input type="password" id="key-anthropic" placeholder="sk-ant-api03-...">
     </div>
 
     <div class="key-group">
-      <label>OpenAI <span class="badge optional">optional</span></label>
-      <input type="password" id="key-openai" placeholder="sk-... (voice transcription + TTS)">
+      <label>OpenAI Key <span class="badge" id="badge-openai">optional</span></label>
+      <input type="password" id="key-openai" placeholder="sk-... (GPT, voice, TTS)">
+    </div>
+
+    <div class="key-group">
+      <label>OpenRouter Key <span class="badge" id="badge-openrouter">optional</span></label>
+      <input type="password" id="key-openrouter" placeholder="sk-or-... (300+ models)">
     </div>
 
     <div class="key-group">
@@ -757,7 +785,7 @@
       <span class="saved" id="saved-msg">Saved</span>
     </div>
 
-    <p class="setup-hint">Only Anthropic is needed. OpenAI adds voice input + natural TTS.</p>
+    <p class="setup-hint">Pick a provider above. You need at least one AI key to get started.</p>
   </div>
 
   <!-- Messages -->
@@ -793,25 +821,86 @@
 
   <!-- Input -->
   <div id="input-area">
-    <button id="tts-toggle" class="tts-btn" title="Toggle voice responses">
-      <svg id="tts-icon-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg>
-      <svg id="tts-icon-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    <button id="tts-toggle" class="tts-btn" title="Voice: Off">
+      <svg id="tts-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      <span id="tts-label" style="font-size:9px;font-weight:600;letter-spacing:0.02em;margin-left:2px;"></span>
     </button>
-    <input type="text" id="input" placeholder="Ask about your screen..." autofocus disabled>
-    <button id="send" disabled>
+    <input type="text" id="input" placeholder="Ask about your screen..." autofocus>
+    <button id="send">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div>
 
   <script>
+    // Global error handler — shows errors visually
+    window.onerror = function(msg, src, line, col, err) {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:10px;background:red;color:white;font-size:12px;z-index:99999;word-break:break-all;';
+      el.textContent = 'JS Error: ' + msg + ' (line ' + line + ')';
+      document.body.prepend(el);
+    };
+
     const messages = document.getElementById('messages');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('send');
     const welcome = document.getElementById('welcome');
     const keyAnthropicInput = document.getElementById('key-anthropic');
     const keyOpenaiInput = document.getElementById('key-openai');
+    const keyOpenrouterInput = document.getElementById('key-openrouter');
     const keyAssemblyaiInput = document.getElementById('key-assemblyai');
     const keyElevenlabsInput = document.getElementById('key-elevenlabs');
+    const setupProvider = document.getElementById('setup-provider');
+    const setupModel = document.getElementById('setup-model');
+    const badgeAnthropic = document.getElementById('badge-anthropic');
+    const badgeOpenai = document.getElementById('badge-openai');
+    const badgeOpenrouter = document.getElementById('badge-openrouter');
+
+    const modelOptions = {
+      anthropic: [
+        { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (latest)' },
+        { value: 'claude-opus-4-6', label: 'Claude Opus 4.6 (smartest)' },
+        { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5' },
+        { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fastest)' },
+      ],
+      openai: [
+        { value: 'gpt-5.4', label: 'GPT-5.4 (most capable)' },
+        { value: 'gpt-5.4-mini', label: 'GPT-5.4 Mini (fast + cheap)' },
+        { value: 'gpt-5.4-nano', label: 'GPT-5.4 Nano (cheapest)' },
+        { value: 'gpt-4.1', label: 'GPT-4.1' },
+        { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
+        { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano' },
+        { value: 'gpt-4o', label: 'GPT-4o' },
+        { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+      ],
+      openrouter: [
+        { value: 'anthropic/claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
+        { value: 'anthropic/claude-opus-4-6', label: 'Claude Opus 4.6' },
+        { value: 'openai/gpt-5.4', label: 'GPT-5.4' },
+        { value: 'openai/gpt-4o', label: 'GPT-4o' },
+        { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+        { value: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+        { value: 'meta-llama/llama-4-maverick', label: 'Llama 4 Maverick' },
+        { value: 'deepseek/deepseek-r1', label: 'DeepSeek R1' },
+        { value: 'mistralai/mistral-large', label: 'Mistral Large' },
+      ],
+    };
+
+    function updateProviderUI() {
+      const provider = setupProvider.value;
+      const options = modelOptions[provider] || [];
+      setupModel.innerHTML = options.map(o =>
+        `<option value="${o.value}">${o.label}</option>`
+      ).join('');
+
+      badgeAnthropic.className = provider === 'anthropic' ? 'badge required' : 'badge optional';
+      badgeAnthropic.textContent = provider === 'anthropic' ? 'required' : 'optional';
+      badgeOpenai.className = provider === 'openai' ? 'badge required' : 'badge optional';
+      badgeOpenai.textContent = provider === 'openai' ? 'required' : 'optional';
+      badgeOpenrouter.className = provider === 'openrouter' ? 'badge required' : 'badge optional';
+      badgeOpenrouter.textContent = provider === 'openrouter' ? 'required' : 'optional';
+    }
+
+    setupProvider.addEventListener('change', updateProviderUI);
     const saveKeysBtn = document.getElementById('save-keys');
     const savedMsg = document.getElementById('saved-msg');
     const setup = document.getElementById('setup');
@@ -823,14 +912,35 @@
 
     // Load existing settings
     window.clicky.getSettings().then((settings) => {
+      console.log('Settings loaded:', JSON.stringify(settings));
+
       if (settings.anthropicApiKey) keyAnthropicInput.value = settings.anthropicApiKey;
       if (settings.openaiApiKey) keyOpenaiInput.value = settings.openaiApiKey;
+      if (settings.openrouterApiKey) keyOpenrouterInput.value = settings.openrouterApiKey;
       if (settings.assemblyaiApiKey) keyAssemblyaiInput.value = settings.assemblyaiApiKey;
       if (settings.elevenlabsApiKey) keyElevenlabsInput.value = settings.elevenlabsApiKey;
 
-      if (settings.anthropicApiKey) {
-        setConfigured(true);
+      // Set provider + model
+      setupProvider.value = settings.aiProvider || 'anthropic';
+      updateProviderUI();
+      if (settings.aiProvider === 'openai' && settings.openaiModel) {
+        setupModel.value = settings.openaiModel;
+      } else if (settings.aiProvider === 'openrouter' && settings.openrouterModel) {
+        setupModel.value = settings.openrouterModel;
+      } else if (settings.claudeModel) {
+        setupModel.value = settings.claudeModel;
       }
+
+      // Check if we have the required key for the chosen provider
+      const hasKey = settings.anthropicApiKey || settings.openaiApiKey || settings.openrouterApiKey;
+      if (hasKey) {
+        setConfigured(true);
+      } else {
+        setup.classList.remove('hidden');
+      }
+    }).catch((err) => {
+      console.error('Failed to load settings:', err);
+      setup.classList.remove('hidden');
     });
 
     // Toggle setup panel
@@ -840,9 +950,13 @@
 
     function setConfigured(configured) {
       isConfigured = configured;
-      input.disabled = !configured;
-      sendBtn.disabled = !configured;
       statusDot.className = configured ? 'status connected' : 'status';
+
+      // Update titlebar to show active provider
+      const providerLabels = { anthropic: 'Claude', openai: 'OpenAI', openrouter: 'OpenRouter' };
+      const providerLabel = providerLabels[setupProvider.value] || setupProvider.value;
+      document.querySelector('#titlebar .title').textContent = 'Clicky · ' + providerLabel;
+
       if (configured) {
         setup.classList.add('hidden');
         input.focus();
@@ -853,16 +967,36 @@
 
     // Save keys
     saveKeysBtn.addEventListener('click', () => {
+      const provider = setupProvider.value;
+      window.clicky.setSetting('aiProvider', provider);
+
+      // Save model based on provider
+      if (provider === 'openai') {
+        window.clicky.setSetting('openaiModel', setupModel.value);
+      } else if (provider === 'openrouter') {
+        window.clicky.setSetting('openrouterModel', setupModel.value);
+      } else {
+        window.clicky.setSetting('claudeModel', setupModel.value);
+      }
+
+      // Validate required key
       const anthropicKey = keyAnthropicInput.value.trim();
-      if (!anthropicKey) {
-        keyAnthropicInput.classList.add('error');
-        keyAnthropicInput.addEventListener('input', () => keyAnthropicInput.classList.remove('error'), { once: true });
+      const openaiKey = keyOpenaiInput.value.trim();
+      const openrouterKey = keyOpenrouterInput.value.trim();
+      const keyMap = { anthropic: anthropicKey, openai: openaiKey, openrouter: openrouterKey };
+      const inputMap = { anthropic: keyAnthropicInput, openai: keyOpenaiInput, openrouter: keyOpenrouterInput };
+      const requiredKey = keyMap[provider];
+      const requiredInput = inputMap[provider];
+
+      if (!requiredKey) {
+        requiredInput.classList.add('error');
+        requiredInput.addEventListener('input', () => requiredInput.classList.remove('error'), { once: true });
         return;
       }
 
-      window.clicky.setSetting('anthropicApiKey', anthropicKey);
+      if (anthropicKey) window.clicky.setSetting('anthropicApiKey', anthropicKey);
+      if (openrouterKey) window.clicky.setSetting('openrouterApiKey', openrouterKey);
 
-      const openaiKey = keyOpenaiInput.value.trim();
       if (openaiKey) {
         window.clicky.setSetting('openaiApiKey', openaiKey);
         // Auto-set OpenAI as transcription + TTS provider if no other keys
@@ -898,9 +1032,12 @@
       }
       const div = document.createElement('div');
       div.className = 'msg ' + role;
-      if (role === 'assistant') {
-        // Render markdown for assistant responses
-        div.innerHTML = marked.parse(text, { breaks: true });
+      if (role === 'assistant' && typeof marked !== 'undefined') {
+        try {
+          div.innerHTML = marked.parse(text, { breaks: true });
+        } catch (e) {
+          div.textContent = text;
+        }
       } else {
         div.textContent = text;
       }
@@ -925,11 +1062,9 @@
 
     async function send() {
       const text = input.value.trim();
-      if (!text || !isConfigured) return;
+      if (!text) return;
 
       input.value = '';
-      sendBtn.disabled = true;
-      input.disabled = true;
 
       addMessage(text, 'user');
       addLoading();
@@ -944,8 +1079,6 @@
         addMessage('Error: ' + (err.message || err), 'system');
       }
 
-      sendBtn.disabled = false;
-      input.disabled = false;
       input.focus();
     }
 
@@ -957,29 +1090,61 @@
       }
     });
 
-    // TTS toggle
+    // TTS 3-state toggle: off → windows → openai cloud → off
     const ttsToggle = document.getElementById('tts-toggle');
-    const ttsIconOn = document.getElementById('tts-icon-on');
-    const ttsIconOff = document.getElementById('tts-icon-off');
-    let ttsEnabled = false; // off by default
+    const ttsIcon = document.getElementById('tts-icon');
+    const ttsLabel = document.getElementById('tts-label');
+    // States: 'off', 'local', 'openai'
+    let ttsState = 'off';
 
     // Load saved TTS state
     window.clicky.getSettings().then((s) => {
-      ttsEnabled = !!s.ttsEnabled;
-      updateTTSIcon();
+      if (s.ttsEnabled && s.ttsProvider === 'openai') {
+        ttsState = 'openai';
+      } else if (s.ttsEnabled) {
+        ttsState = 'local';
+      } else {
+        ttsState = 'off';
+      }
+      updateTTSUI();
     });
 
-    function updateTTSIcon() {
-      ttsIconOn.style.display = ttsEnabled ? 'block' : 'none';
-      ttsIconOff.style.display = ttsEnabled ? 'none' : 'block';
-      ttsToggle.classList.toggle('active', ttsEnabled);
-      ttsToggle.title = ttsEnabled ? 'Voice on — click to mute' : 'Voice off — click to unmute';
+    const ttsIconPaths = {
+      off: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>',
+      local: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>',
+      openai: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19.07 4.93a10 10 0 010 14.14"/>',
+    };
+
+    function updateTTSUI() {
+      ttsIcon.innerHTML = ttsIconPaths[ttsState];
+      ttsToggle.className = 'tts-btn' + (ttsState === 'local' ? ' active-local' : ttsState === 'openai' ? ' active-cloud' : '');
+
+      if (ttsState === 'off') {
+        ttsLabel.textContent = '';
+        ttsToggle.title = 'Voice off — click for Windows voice';
+      } else if (ttsState === 'local') {
+        ttsLabel.textContent = 'WIN';
+        ttsToggle.title = 'Windows voice — click for OpenAI voice';
+      } else {
+        ttsLabel.textContent = 'AI';
+        ttsToggle.title = 'OpenAI voice — click to turn off';
+      }
     }
 
     ttsToggle.addEventListener('click', () => {
-      ttsEnabled = !ttsEnabled;
-      window.clicky.setSetting('ttsEnabled', ttsEnabled);
-      updateTTSIcon();
+      if (ttsState === 'off') {
+        ttsState = 'local';
+        window.clicky.setSetting('ttsEnabled', true);
+        window.clicky.setSetting('ttsProvider', 'local');
+      } else if (ttsState === 'local') {
+        ttsState = 'openai';
+        window.clicky.setSetting('ttsEnabled', true);
+        window.clicky.setSetting('ttsProvider', 'openai');
+      } else {
+        ttsState = 'off';
+        window.clicky.setSetting('ttsEnabled', false);
+      }
+      updateTTSUI();
     });
 
     // Window controls
