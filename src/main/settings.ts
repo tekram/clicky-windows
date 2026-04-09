@@ -49,7 +49,7 @@ const defaults: SettingsSchema = {
   ttsProvider: "local",
   elevenlabsVoiceId: "kPzsL2i3teMYv0FxEYQ6",
   openaiTtsVoice: "alloy",
-  pushToTalkHotkey: "Ctrl+Alt",
+  pushToTalkHotkey: "Ctrl+Shift",
   aiProvider: "anthropic",
   claudeModel: "claude-sonnet-4-5-20250929",
   openaiModel: "gpt-4o",

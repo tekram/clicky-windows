@@ -240,6 +240,16 @@
   <div class="section-label">Voice</div>
 
   <div class="field">
+    <label>Push-to-Talk Hotkey</label>
+    <select id="pushToTalkHotkey">
+      <option value="Ctrl+Shift">Ctrl + Shift + Space</option>
+      <option value="Ctrl+Alt">Ctrl + Alt + Space</option>
+      <option value="Alt+Shift">Alt + Shift + Space</option>
+      <option value="Super+Shift">Win + Shift + Space</option>
+    </select>
+  </div>
+
+  <div class="field">
     <label>Transcription Provider</label>
     <select id="transcriptionProvider">
       <option value="assemblyai">AssemblyAI (cloud)</option>
@@ -318,7 +328,7 @@
   <script>
     const fields = [
       'anthropicApiKey', 'openaiApiKey', 'openrouterApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
-      'proxyUrl', 'useProxy', 'transcriptionProvider',
+      'proxyUrl', 'useProxy', 'pushToTalkHotkey', 'transcriptionProvider',
       'aiProvider', 'claudeModel', 'openaiModel', 'openrouterModel', 'hipaaMode'
     ];
 

@@ -26,6 +26,13 @@ contextBridge.exposeInMainWorld("clicky", {
     });
   },
 
+  // Voice transcript from push-to-talk
+  onVoiceTranscript: (callback: (transcript: string) => void) => {
+    ipcRenderer.on("voice:transcript", (_event, transcript) => {
+      callback(transcript);
+    });
+  },
+
   // Settings
   getSettings: () => ipcRenderer.invoke("settings:getAll"),
   setSetting: (key: string, value: unknown) =>
@@ -35,6 +42,10 @@ contextBridge.exposeInMainWorld("clicky", {
   sendQuery: (text: string): Promise<string> =>
     ipcRenderer.invoke("chat:query", text),
 
+  // Audio — send complete recording for transcription + AI query
+  sendAudioRecording: (audioData: ArrayBuffer): Promise<{ transcript?: string; response?: string; error?: string }> =>
+    ipcRenderer.invoke("audio:recording-complete", audioData),
+
   // Open URL in default browser
   openExternal: (url: string) => {
     ipcRenderer.invoke("shell:openExternal", url);
@@ -43,9 +54,4 @@ contextBridge.exposeInMainWorld("clicky", {
   // Window controls
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
   closeWindow: () => ipcRenderer.invoke("window:close"),
-
-  // Audio
-  sendTranscript: (transcript: string) => {
-    ipcRenderer.send("audio:transcript-ready", transcript);
-  },
 });

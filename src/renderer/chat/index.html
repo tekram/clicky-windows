@@ -499,6 +499,51 @@
     #send:active { transform: scale(0.95); }
     #send:disabled { background: var(--bg-tertiary); cursor: not-allowed; transform: none; box-shadow: none; }
 
+    .mic-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .mic-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .mic-btn.recording {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #ef4444;
+      animation: micPulse 1.5s ease-in-out infinite;
+    }
+
+    .mic-btn.processing {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+      animation: micSpin 1s linear infinite;
+    }
+
+    @keyframes micPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+      50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    }
+
+    @keyframes micSpin {
+      from { opacity: 1; }
+      50% { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+
     .tts-btn {
       height: 36px;
       padding: 0 10px;
@@ -826,6 +871,9 @@
       <span id="tts-label" style="font-size:9px;font-weight:600;letter-spacing:0.02em;margin-left:2px;"></span>
     </button>
     <input type="text" id="input" placeholder="Ask about your screen..." autofocus>
+    <button id="mic-btn" class="mic-btn" title="Push to talk (or Ctrl+Alt+Space)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
     <button id="send">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
@@ -1087,6 +1135,109 @@
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         send();
+      }
+    });
+
+    // ── Push-to-talk mic recording ──
+    const micBtn = document.getElementById('mic-btn');
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { channelCount: 1, sampleRate: 16000 }
+        });
+
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : 'audio/webm'
+        });
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          // Stop all tracks to release mic
+          stream.getTracks().forEach(t => t.stop());
+
+          if (audioChunks.length === 0) return;
+
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const arrayBuffer = await blob.arrayBuffer();
+
+          // Show processing state
+          micBtn.className = 'mic-btn processing';
+          micBtn.title = 'Transcribing...';
+
+          addMessage('(voice message)', 'user');
+          addLoading();
+
+          try {
+            const result = await window.clicky.sendAudioRecording(arrayBuffer);
+
+            document.getElementById('loading-msg')?.remove();
+
+            if (result.error) {
+              addMessage('Voice error: ' + result.error, 'system');
+            } else {
+              // Replace the "(voice message)" with actual transcript
+              const userMsgs = messages.querySelectorAll('.msg.user');
+              const lastUser = userMsgs[userMsgs.length - 1];
+              if (lastUser && lastUser.textContent === '(voice message)') {
+                lastUser.textContent = result.transcript;
+              }
+
+              if (result.response) {
+                const displayText = result.response.replace(/\[POINT:[^\]]+\]/g, '').trim();
+                addMessage(displayText || '(no response)', 'assistant');
+              }
+            }
+          } catch (err) {
+            document.getElementById('loading-msg')?.remove();
+            addMessage('Voice error: ' + (err.message || err), 'system');
+          }
+
+          micBtn.className = 'mic-btn';
+          micBtn.title = 'Push to talk (or Ctrl+Alt+Space)';
+        };
+
+        mediaRecorder.start(250); // collect chunks every 250ms
+        isRecording = true;
+        micBtn.className = 'mic-btn recording';
+        micBtn.title = 'Recording... click to stop';
+
+      } catch (err) {
+        addMessage('Mic error: ' + (err.message || err), 'system');
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      isRecording = false;
+    }
+
+    // Click mic button to toggle
+    micBtn.addEventListener('click', () => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    });
+
+    // Global hotkey (Ctrl+Alt+Space) triggers from main process
+    window.clicky.onRecordingChanged((recording) => {
+      if (recording && !isRecording) {
+        startRecording();
+      } else if (!recording && isRecording) {
+        stopRecording();
       }
     });
 

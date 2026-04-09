@@ -1,6 +1,7 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, shell } from "electron";
 import { createTray } from "./tray";
 import { HotkeyManager } from "./hotkey";
+import { AudioCapture } from "./audio";
 import { SettingsStore } from "./settings";
 import { CompanionManager } from "./companion";
 import path from "path";
@@ -111,6 +112,9 @@ app.whenReady().then(() => {
 
   overlayWindow = createOverlayWindow();
   companion = new CompanionManager(settings, overlayWindow);
+
+  const audioCapture = new AudioCapture(settings);
+  audioCapture.setCompanion(companion);
 
   setupIPC();
 
