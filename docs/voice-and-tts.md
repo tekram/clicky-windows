@@ -25,13 +25,40 @@ Voice input lets you ask questions by speaking instead of typing. Hold the push-
 
 ### Using Local Whisper (No Cloud)
 
-Local Whisper runs transcription entirely on your machine. No API key needed, no audio leaves your device.
+Local Whisper runs transcription entirely on your machine via [whisper.cpp](https://github.com/ggml-org/whisper.cpp). No API key needed, no audio leaves your device.
 
-1. Open Settings
+**1. Download the whisper.cpp Windows binaries**
+
+Grab a prebuilt release from [whisper.cpp releases](https://github.com/ggml-org/whisper.cpp/releases) (look for a `whisper-bin-x64.zip` or similar) and place the following files in `bin/Release/` at the repo root:
+
+```
+bin/Release/
+├── whisper-cli.exe
+├── whisper.dll
+├── ggml.dll
+├── ggml-base.dll
+└── ggml-cpu.dll
+```
+
+**2. Download a Whisper model**
+
+Download a GGML model from [huggingface.co/ggerganov/whisper.cpp](https://huggingface.co/ggerganov/whisper.cpp/tree/main) and place it in `models/`:
+
+```
+models/ggml-base.bin
+```
+
+`ggml-base.bin` (~142 MB, multilingual) is a good quality/speed trade-off. Smaller options: `ggml-tiny.bin` (fast, lower quality). Larger: `ggml-small.bin` / `ggml-medium.bin` (slower, better quality).
+
+> Clicky currently hard-codes `ggml-base.bin` as the model filename — if you want to use a different model, either rename your file or update the path in `src/services/transcription/whisper-local.ts`.
+
+**3. Enable in settings**
+
+1. Open Settings from the tray icon
 2. Set **Transcription Provider** to "Whisper Local"
 3. Save
 
-> Note: Local Whisper is currently in development. Performance depends on your hardware.
+Performance depends on your CPU. On a modern laptop, `base` transcribes a ~5 second clip in ~1 second.
 
 ### Push-to-Talk
 
