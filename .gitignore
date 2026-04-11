@@ -26,3 +26,7 @@ Desktop.ini
 
 # Build artifacts
 *.tsbuildinfo
+
+# Local Whisper binaries & models (downloaded separately, see PATCH-NOTES.md)
+bin/
+models/

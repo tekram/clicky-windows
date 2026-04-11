@@ -1262,7 +1262,27 @@
           if (audioChunks.length === 0) return;
 
           const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const arrayBuffer = await blob.arrayBuffer();
+          const webmBuffer = await blob.arrayBuffer();
+
+          // Decode webm/opus → raw PCM at 16 kHz mono Int16, so the
+          // main process can write a WAV file for whisper.cpp without
+          // shipping ffmpeg. Same buffer also works for OpenAI Whisper API.
+          let arrayBuffer;
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            const decoded = await audioCtx.decodeAudioData(webmBuffer.slice(0));
+            const floatPCM = decoded.getChannelData(0);
+            const int16PCM = new Int16Array(floatPCM.length);
+            for (let i = 0; i < floatPCM.length; i++) {
+              const s = Math.max(-1, Math.min(1, floatPCM[i]));
+              int16PCM[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            arrayBuffer = int16PCM.buffer;
+            audioCtx.close();
+          } catch (decodeErr) {
+            console.error('PCM decode failed, falling back to webm:', decodeErr);
+            arrayBuffer = webmBuffer;
+          }
 
           // Show processing state
           micBtn.className = 'mic-btn processing';
