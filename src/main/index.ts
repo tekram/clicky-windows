@@ -8,16 +8,23 @@ import path from "path";
 
 let chatWindow: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
-let overlayWindow: BrowserWindow | null = null;
+let overlayWindows: BrowserWindow[] = [];
 
 const settings = new SettingsStore();
 let companion: CompanionManager;
 
-function createOverlayWindow(): BrowserWindow {
-  // Use the primary display bounds explicitly — fullscreen: true is unreliable
-  // when combined with transparent on Windows.
-  const primary = screen.getPrimaryDisplay();
-  const { x, y, width, height } = primary.bounds;
+/**
+ * Create one transparent click-through overlay window per display. The
+ * array index matches `screen.getAllDisplays()` order, which is also the
+ * order used by `ScreenCapture.captureAllScreens`, so a POINT tag's
+ * `screen` field directly indexes into this array.
+ */
+function createOverlayWindows(): BrowserWindow[] {
+  return screen.getAllDisplays().map((display, i) => createOverlayWindow(display, i));
+}
+
+function createOverlayWindow(display: Electron.Display, displayIndex: number): BrowserWindow {
+  const { x, y, width, height } = display.bounds;
 
   const win = new BrowserWindow({
     x,
@@ -48,14 +55,15 @@ function createOverlayWindow(): BrowserWindow {
   win.loadFile(path.join(__dirname, "..", "..", "src", "renderer", "overlay", "index.html"));
 
   // Forward overlay renderer console messages to main process so we can see
-  // them in PowerShell during dev.
-  win.webContents.on("console-message", (_event, level, message, line, sourceId) => {
-    console.log(`[overlay-console:${level}] ${message} (line ${line})`);
+  // them in PowerShell during dev. Prefixed with the display index for
+  // multi-monitor clarity.
+  win.webContents.on("console-message", (_event, level, message, line) => {
+    console.log(`[overlay${displayIndex}:${level}] ${message} (line ${line})`);
   });
 
-  // Open DevTools for the overlay so we can inspect it in dev mode.
-  // The DevTools window is separate so it works even though overlay is transparent.
-  if (!app.isPackaged) {
+  // Open DevTools only for the primary display in dev mode — opening one
+  // detached DevTools window per monitor is too noisy.
+  if (!app.isPackaged && displayIndex === 0) {
     win.webContents.once("did-finish-load", () => {
       win.webContents.openDevTools({ mode: "detach" });
     });
@@ -65,7 +73,7 @@ function createOverlayWindow(): BrowserWindow {
   win.once("ready-to-show", () => {
     win.showInactive();
     win.setAlwaysOnTop(true, "screen-saver");
-    console.log("[Clicky] Overlay window shown:", win.getBounds(), "isVisible:", win.isVisible());
+    console.log(`[Clicky] Overlay ${displayIndex} shown:`, win.getBounds(), "isVisible:", win.isVisible());
   });
 
   // Fallback: if ready-to-show never fires (transparent windows can be tricky),
@@ -74,7 +82,7 @@ function createOverlayWindow(): BrowserWindow {
     if (!win.isVisible()) {
       win.showInactive();
       win.setAlwaysOnTop(true, "screen-saver");
-      console.log("[Clicky] Overlay forced-shown after did-finish-load:", win.getBounds());
+      console.log(`[Clicky] Overlay ${displayIndex} forced-shown after did-finish-load:`, win.getBounds());
     }
   });
 
@@ -177,8 +185,8 @@ app.whenReady().then(() => {
   // Hide from taskbar — tray only
   app.dock?.hide?.();
 
-  overlayWindow = createOverlayWindow();
-  companion = new CompanionManager(settings, overlayWindow);
+  overlayWindows = createOverlayWindows();
+  companion = new CompanionManager(settings, overlayWindows);
 
   const audioCapture = new AudioCapture(settings);
   audioCapture.setCompanion(companion);

@@ -36,13 +36,13 @@ export class CompanionManager {
   private screenCapture: ScreenCapture;
   private transcription: TranscriptionProvider;
   private conversationHistory: ConversationEntry[] = [];
-  private overlayWindow: BrowserWindow | null = null;
+  private overlayWindows: BrowserWindow[] = [];
 
-  constructor(settings: SettingsStore, overlayWindow: BrowserWindow | null) {
+  constructor(settings: SettingsStore, overlayWindows: BrowserWindow[]) {
     this.settings = settings;
     this.screenCapture = new ScreenCapture();
     this.transcription = createTranscriptionProvider(settings);
-    this.overlayWindow = overlayWindow;
+    this.overlayWindows = overlayWindows;
   }
 
   private getAIProvider(): AIProvider {
@@ -146,9 +146,22 @@ export class CompanionManager {
       };
     });
     console.log("[Clicky] Final POINT tags:", JSON.stringify(pointTags));
-    console.log("[Clicky] Overlay window present:", !!this.overlayWindow);
-    if (pointTags.length > 0 && this.overlayWindow) {
-      this.overlayWindow.webContents.send("overlay:point", pointTags);
+    console.log("[Clicky] Overlay windows:", this.overlayWindows.length);
+    if (pointTags.length > 0 && this.overlayWindows.length > 0) {
+      // Route each tag to the overlay for its target display. Coordinates
+      // are already in that display's local CSS space (0..bounds.width).
+      const byScreen = new Map<number, typeof pointTags>();
+      for (const tag of pointTags) {
+        const list = byScreen.get(tag.screen) || [];
+        list.push(tag);
+        byScreen.set(tag.screen, list);
+      }
+      for (const [screenIdx, tags] of byScreen) {
+        const win = this.overlayWindows[screenIdx] || this.overlayWindows[0];
+        if (win && !win.isDestroyed()) {
+          win.webContents.send("overlay:point", tags);
+        }
+      }
     }
 
     // 4. Speak response (strip POINT tags from spoken text) — non-blocking

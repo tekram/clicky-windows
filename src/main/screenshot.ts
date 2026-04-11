@@ -50,9 +50,18 @@ export class ScreenCapture {
 
     const results: ScreenshotResult[] = [];
 
-    for (let i = 0; i < sources.length; i++) {
-      const source = sources[i];
-      const display = displays[i] || displays[0];
+    // Correlate desktopCapturer sources with Electron displays by id. The
+    // order of `sources` is NOT guaranteed to match `displays` — on Windows
+    // it usually does, but Electron docs explicitly warn against relying on
+    // it. `source.display_id` is the stringified `display.id` on Win/Mac and
+    // empty on Linux, so we fall back to positional matching there.
+    for (let i = 0; i < displays.length; i++) {
+      const display = displays[i];
+      const matchedById = sources.find(
+        (s) => s.display_id && s.display_id === String(display.id)
+      );
+      const source = matchedById || sources[i] || sources[0];
+      if (!source) continue;
       const full = source.thumbnail;
 
       if (full.isEmpty()) continue;
@@ -79,6 +88,10 @@ export class ScreenCapture {
       });
     }
 
+    // Ordering: stays aligned with `screen.getAllDisplays()` so that
+    // `results[i]` corresponds to the same display as `overlayWindows[i]`
+    // created from the same displays list in index.ts. Downstream code can
+    // index into either array by the POINT tag's `screen` field.
     return results;
   }
 
