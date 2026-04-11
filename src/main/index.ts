@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, shell } from "electron";
+import { app, BrowserWindow, globalShortcut, ipcMain, shell, screen } from "electron";
 import { createTray } from "./tray";
 import { HotkeyManager } from "./hotkey";
 import { AudioCapture } from "./audio";
@@ -14,13 +14,28 @@ const settings = new SettingsStore();
 let companion: CompanionManager;
 
 function createOverlayWindow(): BrowserWindow {
+  // Use the primary display bounds explicitly — fullscreen: true is unreliable
+  // when combined with transparent on Windows.
+  const primary = screen.getPrimaryDisplay();
+  const { x, y, width, height } = primary.bounds;
+
   const win = new BrowserWindow({
-    fullscreen: true,
+    x,
+    y,
+    width,
+    height,
     transparent: true,
     frame: false,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    closable: false,
     alwaysOnTop: true,
     skipTaskbar: true,
     focusable: false,
+    hasShadow: false,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "index.js"),
       contextIsolation: true,
@@ -28,8 +43,41 @@ function createOverlayWindow(): BrowserWindow {
     },
   });
 
-  win.setIgnoreMouseEvents(true);
+  win.setIgnoreMouseEvents(true, { forward: true });
+  win.setAlwaysOnTop(true, "screen-saver");
   win.loadFile(path.join(__dirname, "..", "..", "src", "renderer", "overlay", "index.html"));
+
+  // Forward overlay renderer console messages to main process so we can see
+  // them in PowerShell during dev.
+  win.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+    console.log(`[overlay-console:${level}] ${message} (line ${line})`);
+  });
+
+  // Open DevTools for the overlay so we can inspect it in dev mode.
+  // The DevTools window is separate so it works even though overlay is transparent.
+  if (!app.isPackaged) {
+    win.webContents.once("did-finish-load", () => {
+      win.webContents.openDevTools({ mode: "detach" });
+    });
+  }
+
+  // Show after load is ready (transparent + show:false avoids a black flash on Windows)
+  win.once("ready-to-show", () => {
+    win.showInactive();
+    win.setAlwaysOnTop(true, "screen-saver");
+    console.log("[Clicky] Overlay window shown:", win.getBounds(), "isVisible:", win.isVisible());
+  });
+
+  // Fallback: if ready-to-show never fires (transparent windows can be tricky),
+  // force-show after the load completes.
+  win.webContents.once("did-finish-load", () => {
+    if (!win.isVisible()) {
+      win.showInactive();
+      win.setAlwaysOnTop(true, "screen-saver");
+      console.log("[Clicky] Overlay forced-shown after did-finish-load:", win.getBounds());
+    }
+  });
+
   return win;
 }
 

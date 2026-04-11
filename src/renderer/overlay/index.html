@@ -16,11 +16,11 @@
 
     #cursor {
       position: absolute;
-      width: 24px;
-      height: 24px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      background: rgba(59, 130, 246, 0.8);
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.3);
+      background: rgba(59, 130, 246, 0.95);
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.9), 0 0 60px rgba(59, 130, 246, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.9);
       transform: translate(-50%, -50%);
       pointer-events: none;
       opacity: 0;
@@ -119,37 +119,45 @@
     const label = document.getElementById('label');
     const recordingIndicator = document.getElementById('recording-indicator');
 
-    // Handle point-at animations
-    window.clicky.onPoint((tags) => {
-      if (tags.length === 0) return;
+    console.log('[Clicky overlay] script loaded, window.clicky =', !!window.clicky);
 
-      let i = 0;
-      function pointNext() {
-        if (i >= tags.length) {
-          // Hide after last point
-          setTimeout(() => {
-            cursor.classList.remove('visible');
-            label.classList.remove('visible');
-          }, 2000);
-          return;
+    // Handle point-at animations
+    if (window.clicky && window.clicky.onPoint) {
+      window.clicky.onPoint((tags) => {
+        console.log('[Clicky overlay] onPoint received tags:', JSON.stringify(tags));
+        if (tags.length === 0) return;
+
+        let i = 0;
+        function pointNext() {
+          if (i >= tags.length) {
+            // Hide after last point
+            setTimeout(() => {
+              cursor.classList.remove('visible');
+              label.classList.remove('visible');
+            }, 3000);
+            return;
+          }
+
+          const tag = tags[i];
+          console.log('[Clicky overlay] pointing at', tag.x, tag.y, tag.label);
+          cursor.style.left = tag.x + 'px';
+          cursor.style.top = tag.y + 'px';
+          cursor.classList.add('visible');
+
+          label.style.left = tag.x + 'px';
+          label.style.top = tag.y + 'px';
+          label.textContent = tag.label;
+          label.classList.add('visible');
+
+          i++;
+          setTimeout(pointNext, 2000);
         }
 
-        const tag = tags[i];
-        cursor.style.left = tag.x + 'px';
-        cursor.style.top = tag.y + 'px';
-        cursor.classList.add('visible');
-
-        label.style.left = tag.x + 'px';
-        label.style.top = tag.y + 'px';
-        label.textContent = tag.label;
-        label.classList.add('visible');
-
-        i++;
-        setTimeout(pointNext, 1500);
-      }
-
-      pointNext();
-    });
+        pointNext();
+      });
+    } else {
+      console.error('[Clicky overlay] window.clicky.onPoint is not available!');
+    }
 
     // Handle recording state
     window.clicky.onRecordingChanged((isRecording) => {
