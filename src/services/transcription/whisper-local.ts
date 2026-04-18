@@ -20,6 +20,8 @@ import { TranscriptionProvider } from "./interface";
  *   bin/Release/whisper-cli.exe (+ whisper.dll, ggml*.dll)
  *   models/ggml-base.bin
  */
+const WHISPER_TIMEOUT_MS = 45_000;
+
 export class WhisperLocalProvider implements TranscriptionProvider {
   private audioChunks: Buffer[] = [];
   private partialCallback: ((text: string) => void) | null = null;
@@ -96,15 +98,28 @@ export class WhisperLocalProvider implements TranscriptionProvider {
         cwd: path.dirname(whisperExe),
       });
 
+      const cleanup = () => {
+        try { fs.unlinkSync(wavPath); } catch { /* ignore */ }
+        try { fs.unlinkSync(txtPath); } catch { /* ignore */ }
+      };
+
+      const timer = setTimeout(() => {
+        proc.kill();
+        cleanup();
+        reject(new Error(`whisper-cli timed out after ${WHISPER_TIMEOUT_MS / 1000}s`));
+      }, WHISPER_TIMEOUT_MS);
+
       let stderr = "";
       proc.stderr.on("data", (d: Buffer) => {
         stderr += d.toString();
       });
       proc.on("error", (err: Error) => {
+        clearTimeout(timer);
         cleanup();
         reject(new Error(`whisper-cli spawn error: ${err.message}`));
       });
       proc.on("close", (code: number | null) => {
+        clearTimeout(timer);
         if (code !== 0) {
           cleanup();
           reject(new Error(`whisper-cli exited with code ${code}: ${stderr}`));
@@ -120,11 +135,6 @@ export class WhisperLocalProvider implements TranscriptionProvider {
           reject(new Error(`Could not read whisper output: ${msg}`));
         }
       });
-
-      const cleanup = () => {
-        try { fs.unlinkSync(wavPath); } catch { /* ignore */ }
-        try { fs.unlinkSync(txtPath); } catch { /* ignore */ }
-      };
     });
   }
 }

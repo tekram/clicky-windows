@@ -44,7 +44,8 @@ Since screenshots (which may contain PHI) are sent to Claude, you need a BAA wit
 
 ### 4. Data Handling
 
-- Clicky does **not** store screenshots, audio, or transcripts to disk
+- Screenshots and transcripts are **not** written to disk; they exist in memory only
+- When using **Whisper Local** transcription, a temporary WAV file is written to the OS temp directory during processing and deleted immediately after. Under normal operation this file is ephemeral; a hard crash between write and cleanup may leave it behind. Restart the app to trigger cleanup, or periodically clear your OS temp folder.
 - Conversation history is in-memory only and cleared when the app closes
 - No data persists between sessions
 
