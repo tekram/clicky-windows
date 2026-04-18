@@ -62,6 +62,12 @@ export class AudioCapture {
   }
 
   private async transcribe(pcmBuffer: Buffer): Promise<string> {
+    // 16kHz × 16-bit mono = 32 000 bytes/s. Cap at 60 s to bound memory usage.
+    const MAX_PCM_BYTES = 60 * 32_000;
+    if (pcmBuffer.length > MAX_PCM_BYTES) {
+      pcmBuffer = pcmBuffer.subarray(0, MAX_PCM_BYTES);
+    }
+
     const provider = this.settings.get("transcriptionProvider");
     const openaiKey = this.settings.get("openaiApiKey");
 
