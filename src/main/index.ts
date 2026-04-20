@@ -17,9 +17,25 @@ let cursorBuddyInterval: ReturnType<typeof setInterval> | null = null;
 function startCursorBuddy(): void {
   if (cursorBuddyInterval) return;
   cursorBuddyInterval = setInterval(() => {
-    if (!overlayWindow || overlayWindow.isDestroyed()) return;
+    if (overlayWindows.length === 0) return;
     const point = screen.getCursorScreenPoint();
-    overlayWindow.webContents.send("overlay:cursor-buddy", point.x, point.y);
+    // Route the buddy to the overlay for the display that contains the
+    // cursor; hide it on every other overlay. Coordinates are translated
+    // into that display's local CSS space (matches how POINT tags work).
+    const target = screen.getDisplayNearestPoint(point);
+    const displays = screen.getAllDisplays();
+    const targetIndex = displays.findIndex((d) => d.id === target.id);
+    for (let i = 0; i < overlayWindows.length; i++) {
+      const win = overlayWindows[i];
+      if (!win || win.isDestroyed()) continue;
+      if (i === targetIndex) {
+        const localX = point.x - target.bounds.x;
+        const localY = point.y - target.bounds.y;
+        win.webContents.send("overlay:cursor-buddy", localX, localY);
+      } else {
+        win.webContents.send("overlay:cursor-buddy-visible", false);
+      }
+    }
   }, 16);
 }
 
@@ -28,8 +44,10 @@ function stopCursorBuddy(): void {
     clearInterval(cursorBuddyInterval);
     cursorBuddyInterval = null;
   }
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.webContents.send("overlay:cursor-buddy-visible", false);
+  for (const win of overlayWindows) {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send("overlay:cursor-buddy-visible", false);
+    }
   }
 }
 
