@@ -1267,6 +1267,8 @@
           // Decode webm/opus → raw PCM at 16 kHz mono Int16, so the
           // main process can write a WAV file for whisper.cpp without
           // shipping ffmpeg. Same buffer also works for OpenAI Whisper API.
+          // Main assumes raw 16-bit PCM, so if decode fails we must surface
+          // the error — sending webm would produce garbled audio.
           let arrayBuffer;
           try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
@@ -1280,8 +1282,12 @@
             arrayBuffer = int16PCM.buffer;
             audioCtx.close();
           } catch (decodeErr) {
-            console.error('PCM decode failed, falling back to webm:', decodeErr);
-            arrayBuffer = webmBuffer;
+            console.error('PCM decode failed:', decodeErr);
+            addMessage('Voice error: could not decode audio (' + (decodeErr.message || decodeErr) + ')', 'system');
+            hideStatus();
+            micBtn.className = 'mic-btn';
+            micBtn.title = 'Push to talk (or Ctrl+Shift+Space)';
+            return;
           }
 
           // Show processing state

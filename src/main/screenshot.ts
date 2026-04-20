@@ -55,11 +55,21 @@ export class ScreenCapture {
     // it usually does, but Electron docs explicitly warn against relying on
     // it. `source.display_id` is the stringified `display.id` on Win/Mac and
     // empty on Linux, so we fall back to positional matching there.
+    // Whether any source exposes display_id. On Linux it's empty across the
+    // board, so the warning below only fires on Win/Mac where we actually
+    // expect id-based matching to succeed.
+    const anyHasDisplayId = sources.some((s) => s.display_id);
+
     for (let i = 0; i < displays.length; i++) {
       const display = displays[i];
       const matchedById = sources.find(
         (s) => s.display_id && s.display_id === String(display.id)
       );
+      if (!matchedById && anyHasDisplayId) {
+        console.warn(
+          `[screenshot] no desktopCapturer source matched display.id=${display.id} (index ${i}); falling back to positional match. Screenshot may be routed to the wrong monitor.`
+        );
+      }
       const source = matchedById || sources[i] || sources[0];
       if (!source) continue;
       const full = source.thumbnail;

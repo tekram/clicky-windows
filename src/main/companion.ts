@@ -157,6 +157,11 @@ export class CompanionManager {
         byScreen.set(tag.screen, list);
       }
       for (const [screenIdx, tags] of byScreen) {
+        if (screenIdx < 0 || screenIdx >= this.overlayWindows.length) {
+          console.warn(
+            `[Clicky] POINT tag screen=${screenIdx} is out of range (have ${this.overlayWindows.length} overlay windows); routing to primary display.`
+          );
+        }
         const win = this.overlayWindows[screenIdx] || this.overlayWindows[0];
         if (win && !win.isDestroyed()) {
           win.webContents.send("overlay:point", tags);

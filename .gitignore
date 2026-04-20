@@ -27,6 +27,6 @@ Desktop.ini
 # Build artifacts
 *.tsbuildinfo
 
-# Local Whisper binaries & models (downloaded separately, see PATCH-NOTES.md)
+# Local Whisper binaries & models (downloaded separately, see docs/voice-and-tts.md)
 bin/
 models/

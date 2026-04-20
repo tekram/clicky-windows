@@ -214,13 +214,17 @@
     });
 
     // Handle recording state
-    window.clicky.onRecordingChanged((isRecording) => {
-      if (isRecording) {
-        recordingIndicator.classList.add('active');
-      } else {
-        recordingIndicator.classList.remove('active');
-      }
-    });
+    if (window.clicky && window.clicky.onRecordingChanged) {
+      window.clicky.onRecordingChanged((isRecording) => {
+        if (isRecording) {
+          recordingIndicator.classList.add('active');
+        } else {
+          recordingIndicator.classList.remove('active');
+        }
+      });
+    } else {
+      console.error('[Clicky overlay] window.clicky.onRecordingChanged is not available!');
+    }
   </script>
 </body>
 </html>
