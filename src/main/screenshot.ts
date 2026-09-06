@@ -23,17 +23,31 @@ export interface ScreenshotResult {
 const MAX_DIMENSION = 1568;
 const JPEG_QUALITY = 85;
 
+// Agent mode (computer_toolset_20260801) is not subject to the pass-1 pointing
+// limit above — models supporting the toolset accept a 2576 px long edge and
+// ~3.75 MP. Downsampling to 1568 here makes small UI (taskbar icons, tray)
+// unidentifiable and sends the agent into repeated zoom loops.
+export const AGENT_MAX_DIMENSION = 2576;
+export const AGENT_MAX_PIXELS = 3_750_000;
+
+export interface CaptureOptions {
+  maxDimension?: number;
+  maxPixels?: number;
+}
+
 export class ScreenCapture {
   /**
    * Capture all screens. Returns a downsampled JPEG for pass-1 AI input and
    * retains the native-resolution NativeImage on each result for refinement.
    */
-  async captureAllScreens(): Promise<ScreenshotResult[]> {
+  async captureAllScreens(options: CaptureOptions = {}): Promise<ScreenshotResult[]> {
+    const maxDimension = options.maxDimension ?? MAX_DIMENSION;
+    const maxPixels = options.maxPixels;
     const displays = screen.getAllDisplays();
 
     // Ask for the largest native-pixel edge across all displays. Electron will
     // clamp to what the OS provides, so oversized requests are safe.
-    let maxNativeEdge = MAX_DIMENSION;
+    let maxNativeEdge = maxDimension;
     for (const d of displays) {
       const sf = d.scaleFactor || 1;
       maxNativeEdge = Math.max(
@@ -76,14 +90,21 @@ export class ScreenCapture {
 
       if (full.isEmpty()) continue;
 
-      // Build a downsampled copy for pass-1 AI input.
+      // Build a downsampled copy for AI input. Honour both the long-edge cap
+      // and, when given, a total-pixel cap — a wide display can satisfy one
+      // and blow the other.
       const fullSize = full.getSize();
       const maxEdge = Math.max(fullSize.width, fullSize.height);
+      const scale = Math.min(
+        1,
+        maxDimension / maxEdge,
+        maxPixels ? Math.sqrt(maxPixels / (fullSize.width * fullSize.height)) : 1
+      );
       const downsampled =
-        maxEdge > MAX_DIMENSION
+        scale < 1
           ? full.resize({
-              width: Math.round((fullSize.width * MAX_DIMENSION) / maxEdge),
-              height: Math.round((fullSize.height * MAX_DIMENSION) / maxEdge),
+              width: Math.round(fullSize.width * scale),
+              height: Math.round(fullSize.height * scale),
             })
           : full;
       const downSize = downsampled.getSize();

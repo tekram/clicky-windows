@@ -62,6 +62,12 @@ contextBridge.exposeInMainWorld("clicky", {
   sendQuery: (text: string): Promise<string> =>
     ipcRenderer.invoke("chat:query", text),
 
+  // Agent mode — Claude controls the mouse and keyboard until the task is done
+  runAgentTask: (task: string): Promise<string> =>
+    ipcRenderer.invoke("agent:run", task),
+  stopAgent: () => ipcRenderer.invoke("agent:stop"),
+  isAgentRunning: (): Promise<boolean> => ipcRenderer.invoke("agent:isRunning"),
+
   // Audio — send complete recording for transcription + AI query
   sendAudioRecording: (audioData: ArrayBuffer): Promise<{ transcript?: string; response?: string; error?: string }> =>
     ipcRenderer.invoke("audio:recording-complete", audioData),

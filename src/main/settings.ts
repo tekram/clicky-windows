@@ -36,6 +36,11 @@ interface SettingsSchema {
   alwaysOnTop: boolean;
   cursorBuddyEnabled: boolean;
 
+  // Agent mode (autonomous computer control)
+  agentModeEnabled: boolean;
+  agentModel: string;
+  agentAbortHotkey: string;
+
   // HIPAA
   hipaaMode: boolean;
 }
@@ -60,6 +65,9 @@ const defaults: SettingsSchema = {
   claudeModel: "claude-sonnet-4-5-20250929",
   openaiModel: "gpt-4o",
   openrouterModel: "anthropic/claude-sonnet-4-5",
+  agentModeEnabled: false,
+  agentModel: "claude-opus-5",
+  agentAbortHotkey: "Ctrl+Alt+Q",
   hipaaMode: false,
 };
 

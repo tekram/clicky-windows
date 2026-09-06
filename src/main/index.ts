@@ -191,6 +191,24 @@ function setupIPC(): void {
     }
   });
 
+  // Agent mode — Claude drives the mouse and keyboard until the task is done
+  ipcMain.handle("agent:run", async (_event, task: string) => {
+    if (!settings.get("agentModeEnabled")) {
+      throw new Error("Agent mode is disabled. Enable it in Settings first.");
+    }
+    try {
+      return await companion.runAgentTask(task);
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : String(err));
+    }
+  });
+
+  ipcMain.handle("agent:stop", () => {
+    companion.stopAgent();
+  });
+
+  ipcMain.handle("agent:isRunning", () => companion.isAgentRunning);
+
   // Settings
   ipcMain.handle("settings:getAll", () => settings.getAll());
   ipcMain.handle("settings:set", (_event, key: string, value: unknown) => {
@@ -247,6 +265,9 @@ app.whenReady().then(() => {
           chatWindow = null;
         });
       }
+    },
+    onStopAgent: () => {
+      companion.stopAgent();
     },
     onSettings: () => {
       if (settingsWindow && !settingsWindow.isDestroyed()) {

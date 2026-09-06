@@ -326,6 +326,30 @@
     </label>
   </div>
 
+  <div class="section-label">Agent Mode</div>
+
+  <div class="toggle-row">
+    <label>Let Clicky control mouse &amp; keyboard</label>
+    <label class="toggle">
+      <input type="checkbox" id="agentModeEnabled">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="group">
+    <label for="agentModel">Agent model</label>
+    <select id="agentModel">
+      <option value="claude-opus-5">Claude Opus 5 (most capable)</option>
+      <option value="claude-sonnet-5">Claude Sonnet 5 (faster, cheaper)</option>
+      <option value="claude-opus-4-8">Claude Opus 4.8</option>
+    </select>
+  </div>
+
+  <div class="group">
+    <label for="agentAbortHotkey">Emergency stop hotkey</label>
+    <input type="text" id="agentAbortHotkey" placeholder="Ctrl+Alt+Q">
+  </div>
+
   <div class="section-label">Compliance</div>
 
   <div class="toggle-row">
@@ -348,7 +372,8 @@
       'anthropicApiKey', 'openaiApiKey', 'openrouterApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
       'proxyUrl', 'useProxy', 'pushToTalkHotkey', 'transcriptionProvider',
       'aiProvider', 'claudeModel', 'openaiModel', 'openrouterModel',
-      'alwaysOnTop', 'cursorBuddyEnabled', 'hipaaMode'
+      'alwaysOnTop', 'cursorBuddyEnabled', 'hipaaMode',
+      'agentModeEnabled', 'agentModel', 'agentAbortHotkey'
     ];
 
     window.clicky.getSettings().then((settings) => {
