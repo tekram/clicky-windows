@@ -125,6 +125,49 @@ notable constraints encoded in `createOverlayWindow`:
 - Keep the `did-finish-load` fallback `showInactive()`; on rare occasions
   `ready-to-show` never fires for transparent windows.
 
+## Agent mode (autonomous computer control)
+
+Separate from the pointing pipeline. Pointing is read-only — it *shows* you
+where to click. Agent mode *actually clicks*: Claude drives the real mouse and
+keyboard via the `computer_toolset_20260801` toolset until the task is done.
+
+```
+src/main/agentic/
+├── input.ts      # Win32 SendInput via a long-lived PowerShell process
+├── keymap.ts     # X11 keysym names ("ctrl+s", "Page_Down") → Windows VK codes
+├── executor.ts   # the 17 toolset members → real input; coordinate translation
+└── session.ts    # the agent loop + abort watchdogs
+src/services/claude-agent.ts   # API client (raw fetch, same as claude.ts)
+```
+
+Off by default (`agentModeEnabled`). Requires a model that supports the
+toolset — `claude-opus-5`, `claude-sonnet-5`, or `claude-opus-4-8`. The
+pointing pipeline's `claudeModel` setting is a *different* key and its default
+(`claude-sonnet-4-5-*`) does **not** support the toolset.
+
+### Footguns
+
+- **Keystroke delay is load-bearing, not padding.** `TextUnits` sleeps
+  `KEYSTROKE_DELAY_MS` (15 ms) between characters. With no delay, characters
+  injected after a word boundary get coalesced by the target app and every one
+  of them arrives as the *final* character of the run — "abc defgh" types as
+  "abc hhhhh". Measured floor is ~5 ms; 15 ms is the same wall-clock anyway
+  because Windows' timer granularity is ~15.6 ms.
+- **Text crosses the process boundary as UTF-16 code units, not a string.**
+  PowerShell decodes redirected stdin with the OEM codepage (cp932 on a JP
+  machine), which mangles anything non-ASCII. Never "simplify" this back to
+  sending the raw string.
+- **Three coordinate hops, not two.** Claude works in screenshot pixels,
+  Electron reports display bounds in DIPs, and `SetCursorPos` takes physical
+  pixels. `screen.dipToScreenPoint` is the required last hop — skipping it
+  silently misses on any display that isn't at 100% scaling.
+- **The abort path is the only guardrail** (there is no per-action
+  confirmation). It is deliberately redundant — global hotkey, mouse-nudge
+  detection, tray item, and chat STOP button all resolve to one `AbortSignal`
+  checked between every action and every API turn. The nudge watcher suppresses
+  itself while the executor is mid-action, or the agent would abort on its own
+  mouse movement.
+
 ## Dev workflow
 
 ```sh

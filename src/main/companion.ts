@@ -9,6 +9,7 @@ import {
   createTranscriptionProvider,
 } from "../services/transcription/interface";
 import { createTTSProvider } from "../services/tts/interface";
+import { AgentSession } from "./agentic/session";
 
 interface ConversationEntry {
   role: "user" | "assistant";
@@ -37,12 +38,32 @@ export class CompanionManager {
   private transcription: TranscriptionProvider;
   private conversationHistory: ConversationEntry[] = [];
   private overlayWindows: BrowserWindow[] = [];
+  private agentSession: AgentSession;
 
   constructor(settings: SettingsStore, overlayWindows: BrowserWindow[]) {
     this.settings = settings;
     this.screenCapture = new ScreenCapture();
     this.transcription = createTranscriptionProvider(settings);
     this.overlayWindows = overlayWindows;
+    this.agentSession = new AgentSession(settings, this.screenCapture, (stage, label) =>
+      this.broadcastStage(stage, label)
+    );
+  }
+
+  get isAgentRunning(): boolean {
+    return this.agentSession.isRunning;
+  }
+
+  stopAgent(): void {
+    this.agentSession.stop();
+  }
+
+  /**
+   * Agent mode: let Claude drive the mouse and keyboard until the task is done.
+   * Separate from processQuery — this path never points, it acts.
+   */
+  async runAgentTask(task: string): Promise<string> {
+    return this.agentSession.run(task);
   }
 
   private getAIProvider(): AIProvider {

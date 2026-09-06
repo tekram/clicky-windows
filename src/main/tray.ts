@@ -4,6 +4,7 @@ import path from "path";
 interface TrayCallbacks {
   onChat: () => void;
   onSettings: () => void;
+  onStopAgent: () => void;
   onQuit: () => void;
 }
 
@@ -28,6 +29,11 @@ export function createTray(callbacks: TrayCallbacks): Tray {
     {
       label: "Settings",
       click: callbacks.onSettings,
+    },
+    { type: "separator" },
+    {
+      label: "Stop agent",
+      click: callbacks.onStopAgent,
     },
     { type: "separator" },
     {

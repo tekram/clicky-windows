@@ -924,6 +924,7 @@
   <div id="status-bar" class="status-bar hidden">
     <div class="status-dot-anim"></div>
     <span id="status-text"></span>
+    <button id="agent-stop" hidden style="margin-left:auto;background:#c0392b;color:#fff;border:0;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600;cursor:pointer;">STOP</button>
   </div>
 
   <!-- Input -->
@@ -931,6 +932,9 @@
     <button id="tts-toggle" class="tts-btn" title="Voice: Off">
       <svg id="tts-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
       <span id="tts-label" style="font-size:9px;font-weight:600;letter-spacing:0.02em;margin-left:2px;"></span>
+    </button>
+    <button id="agent-toggle" class="tts-btn" title="Agent mode: Off">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
     </button>
     <input type="text" id="input" placeholder="Ask about your screen..." autofocus>
     <button id="mic-btn" class="mic-btn" title="Push to talk (or Ctrl+Alt+Space)">
@@ -1170,6 +1174,36 @@
       return div;
     }
 
+    // ── Agent mode toggle ──
+    const agentToggle = document.getElementById('agent-toggle');
+    const agentStopBtn = document.getElementById('agent-stop');
+    let agentMode = false;
+
+    function renderAgentToggle() {
+      agentToggle.style.color = agentMode ? '#e67e22' : '';
+      agentToggle.title = agentMode ? 'Agent mode: On — Clicky will control your mouse' : 'Agent mode: Off';
+      input.placeholder = agentMode ? 'Tell Clicky what to do...' : 'Ask about your screen...';
+    }
+
+    window.clicky.getSettings().then((s) => {
+      agentMode = !!s.agentModeEnabled;
+      renderAgentToggle();
+    });
+
+    agentToggle.addEventListener('click', () => {
+      agentMode = !agentMode;
+      window.clicky.setSetting('agentModeEnabled', agentMode);
+      renderAgentToggle();
+      if (agentMode) {
+        addMessage(
+          'Agent mode on. Clicky will control your mouse and keyboard directly. To stop it: press Ctrl+Alt+Q, move the mouse, or hit STOP.',
+          'system'
+        );
+      }
+    });
+
+    agentStopBtn.addEventListener('click', () => window.clicky.stopAgent());
+
     async function send() {
       const text = input.value.trim();
       if (!text) return;
@@ -1180,13 +1214,22 @@
       addLoading();
 
       try {
-        const response = await window.clicky.sendQuery(text);
-        document.getElementById('loading-msg')?.remove();
-        const displayText = response.replace(/\[POINT:[^\]]+\]/g, '').trim();
-        addMessage(displayText || '(no response)', 'assistant');
+        if (agentMode) {
+          agentStopBtn.hidden = false;
+          const summary = await window.clicky.runAgentTask(text);
+          document.getElementById('loading-msg')?.remove();
+          addMessage(summary || '(no response)', 'assistant');
+        } else {
+          const response = await window.clicky.sendQuery(text);
+          document.getElementById('loading-msg')?.remove();
+          const displayText = response.replace(/\[POINT:[^\]]+\]/g, '').trim();
+          addMessage(displayText || '(no response)', 'assistant');
+        }
       } catch (err) {
         document.getElementById('loading-msg')?.remove();
         addMessage('Error: ' + (err.message || err), 'system');
+      } finally {
+        agentStopBtn.hidden = true;
       }
 
       hideStatus();
